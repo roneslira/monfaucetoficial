@@ -181,7 +181,7 @@
         @keyframes pulse {
             0% { opacity: 0.2; } 50% { opacity: 0.4; } 100% { opacity: 0.2; }
         }
-        .blur-1 { top: 25%; left: 25%; width: 14.', 'rem; height: 14rem; background: rgba(0, 122, 255, 0.2); }
+        .blur-1 { top: 25%; left: 25%; width: 14rem; height: 14rem; background: rgba(0, 122, 255, 0.2); }
         .blur-2 { bottom: 33%; right: 33%; width: 20rem; height: 20rem; background: rgba(0, 212, 255, 0.1); }
         footer {
             position: fixed;
@@ -419,14 +419,15 @@
         const modalStatus = document.getElementById("modalStatus");
         const sponsorsList = document.getElementById("sponsors-list");
 
-        connectWalletButton.addEventListener("click", connectWallet);
-        followTwitterButton.addEventListener("click", followTwitter);
-        likePostButton.addEventListener("click", likePost);
-        followSponsorsButton.addEventListener("click", followSponsors);
-        claimButton.addEventListener("click", claimTokens);
-        disconnectWallet.addEventListener("click", disconnect);
-        donateButton.addEventListener("click", donate);
-        submitXProfile.addEventListener("click", submitSponsorProfile);
+        // Eventos corrigidos
+        connectWalletButton.onclick = connectWallet;
+        followTwitterButton.onclick = followTwitter;
+        likePostButton.onclick = likePost;
+        followSponsorsButton.onclick = followSponsors;
+        claimButton.onclick = claimTokens;
+        disconnectWallet.onclick = disconnect;
+        donateButton.onclick = donate;
+        submitXProfile.onclick = submitSponsorProfile;
 
         async function connectWallet() {
             if (!window.ethereum) {
@@ -442,18 +443,15 @@
 
                 const network = await provider.getNetwork();
                 if (network.chainId !== 10143) {
-                    await window.ethereum.request({
-                        method: 'wallet_addEthereumChain',
-                        params: [MONAD_TESTNET]
-                    });
+                    await window.ethereum.request({ method: 'wallet_addEthereumChain', params: [MONAD_TESTNET] });
                 }
 
                 walletAddress.textContent = `${account.slice(0, 6)}...${account.slice(-4)}`;
                 walletInfo.style.display = "flex";
                 tasksCompleted.connectWallet = true;
                 updateTaskButtons();
-                updateUI();
-                load.ConcurrentSponsors();
+                await updateUI();
+                await loadSponsors();
                 status.textContent = "Wallet connected!";
             } catch (error) {
                 console.error("Connect wallet error:", error);
@@ -530,13 +528,19 @@
         }
 
         async function updateUI() {
-            const balance = await contract.getBalance();
-            const claimAmt = await contract.claimAmount();
-            available.textContent = ethers.utils.formatEther(balance) + " MON";
-            claimAmountEl.textContent = ethers.utils.formatEther(claimAmt) + " MON";
-            if (account) {
-                const last = await contract.lastClaim(account);
-                lastClaim.textContent = last > 0 ? new Date(last * 1000).toLocaleString() : "None";
+            try {
+                const balance = await contract.getBalance();
+                const claimAmt = await contract.claimAmount();
+                available.textContent = ethers.utils.formatEther(balance) + " MON";
+                claimAmountEl.textContent = ethers.utils.formatEther(claimAmt) + " MON";
+                if (account) {
+                    const last = await contract.lastClaim(account);
+                    lastClaim.textContent = last > 0 ? new Date(last * 1000).toLocaleString() : "None";
+                }
+                checkClaimStatus();
+            } catch (error) {
+                console.error("Update UI error:", error);
+                status.textContent = "Error loading UI.";
             }
         }
 
@@ -547,34 +551,40 @@
                 status.textContent = "Connect your wallet to start.";
                 return;
             }
-            const last = await contract.lastClaim(account);
-            const cooldown = await contract.cooldownPeriod();
-            const paused = await contract.paused();
-            const now = Math.floor(Date.now() / 1000);
+            try {
+                const last = Number(await contract.lastClaim(account));
+                const cooldown = Number(await contract.cooldownPeriod());
+                const paused = await contract.paused();
+                const now = Math.floor(Date.now() / 1000);
 
-            if (paused) {
-                claimButton.disabled = true;
-                claimButton.classList.remove("enabled");
-                status.textContent = "Claims are paused by the admin.";
-            } else if (now < last + cooldown) {
-                claimButton.disabled = true;
-                claimButton.classList.remove("enabled");
-                const timeLeft = last + cooldown - now;
-                status.textContent = `Cooldown active. Wait ${formatTime(timeLeft)}.`;
-                startCooldownCountdown(last, cooldown);
-            } else if (!tasksCompleted.followTwitter || !tasksCompleted.likePost) {
-                claimButton.disabled = true;
-                claimButton.classList.remove("enabled");
-                status.textContent = "Complete all required tasks to claim tokens.";
-            } else {
-                claimButton.disabled = false;
-                claimButton.classList.add("enabled");
-                status.textContent = "Ready to claim!";
+                if (paused) {
+                    claimButton.disabled = true;
+                    claimButton.classList.remove("enabled");
+                    status.textContent = "Claims are paused by the admin.";
+                } else if (now < last + cooldown) {
+                    claimButton.disabled = true;
+                    claimButton.classList.remove("enabled");
+                    const timeLeft = last + cooldown - now;
+                    status.textContent = `Cooldown active. Wait ${formatTime(timeLeft)}.`;
+                    startCooldownCountdown(last, cooldown);
+                } else if (!tasksCompleted.followTwitter || !tasksCompleted.likePost) {
+                    claimButton.disabled = true;
+                    claimButton.classList.remove("enabled");
+                    status.textContent = "Complete all required tasks to claim tokens.";
+                } else {
+                    claimButton.disabled = false;
+                    claimButton.classList.add("enabled");
+                    status.textContent = "Ready to claim!";
+                }
+            } catch (error) {
+                console.error("Check claim status error:", error);
+                status.textContent = "Error checking claim status.";
             }
         }
 
         function startCooldownCountdown(last, cooldown) {
             const endTime = last + cooldown;
+            claimButton.textContent = "Claim Tokens"; // Reset inicial
             const updateTimer = () => {
                 const now = Math.floor(Date.now() / 1000);
                 const remaining = endTime - now;
@@ -601,8 +611,7 @@
                 status.textContent = "Tokens claimed successfully!";
                 tasksCompleted.followSponsors = false;
                 updateTaskButtons();
-                updateUI();
-                checkClaimStatus();
+                await updateUI();
             } catch (error) {
                 console.error("Claim error:", error);
                 status.textContent = `Error: ${error.message}`;
@@ -637,8 +646,8 @@
                 } else {
                     status.textContent = "Thank you for supporting MonFaucet!";
                 }
-                updateUI();
-                loadSponsors();
+                await updateUI();
+                await loadSponsors();
             } catch (error) {
                 console.error("Donate error:", error);
                 status.textContent = `Error: ${error.message}`;
@@ -663,7 +672,7 @@
                 await tx.wait();
                 modalStatus.textContent = "Profile added successfully!";
                 closeModal();
-                loadSponsors();
+                await loadSponsors();
             } catch (error) {
                 console.error("Submit sponsor profile error:", error);
                 modalStatus.textContent = `Error: ${error.message}`;
@@ -720,11 +729,17 @@
         }
 
         function formatTime(seconds) {
+            if (seconds <= 0) return "0s";
             const days = Math.floor(seconds / 86400);
             const hours = Math.floor((seconds % 86400) / 3600);
-            const mins = Math.floor((seconds % 3600) / 60);
+            const minutes = Math.floor((seconds % 3600) / 60);
             const secs = seconds % 60;
-            return `${days}d ${hours}h ${mins}m ${secs}s`;
+            let result = "";
+            if (days > 0) result += `${days}d `;
+            if (hours > 0 || days > 0) result += `${hours}h `;
+            if (minutes > 0 || hours > 0 || days > 0) result += `${minutes}m `;
+            result += `${secs}s`;
+            return result.trim();
         }
 
         function disconnect() {
@@ -739,12 +754,11 @@
             status.textContent = "Wallet disconnected.";
         }
 
-        window.addEventListener("load", () => {
+        window.addEventListener("load", async () => {
             provider = new ethers.providers.JsonRpcProvider(MONAD_TESTNET.rpcUrls[0]);
             contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, provider);
-            updateUI();
-            loadSponsors();
-            checkClaimStatus();
+            await updateUI();
+            await loadSponsors();
         });
 
         // Animação de partículas
