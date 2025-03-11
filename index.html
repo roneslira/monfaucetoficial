@@ -277,9 +277,9 @@
             max-width: 24rem;
             min-height: 450px;
             background: var(--box-background);
-            border: 1px solid var(--box-border); /* Borda mais justa */
+            border: 1px solid var(--box-border);
             border-radius: 1rem;
-            padding: 0.5rem; /* Reduzido */
+            padding: 0.5rem;
             text-align: center;
             box-shadow: 0 10px 20px var(--shadow-color), inset 0 0 10px rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
@@ -291,7 +291,7 @@
         }
         .sponsors-container h2 {
             font-size: 1.8rem;
-            margin-bottom: 0.5rem; /* Reduzido */
+            margin-bottom: 0.5rem;
             background: var(--gold);
             -webkit-background-clip: text;
             background-clip: text;
@@ -314,8 +314,8 @@
         }
         .sponsor-item {
             width: 100%;
-            padding: 0.4rem; /* Reduzido para achatar */
-            margin-bottom: 0.3rem; /* Reduzido */
+            padding: 0.4rem;
+            margin-bottom: 0.3rem;
             border-radius: 0.8rem;
             background: rgba(255, 255, 255, 0.05);
             text-align: left;
@@ -323,7 +323,7 @@
             transition: transform 0.3s ease, box-shadow 0.3s ease, filter 0.3s ease;
             display: flex;
             flex-direction: column;
-            gap: 0.2rem; /* Reduzido */
+            gap: 0.2rem;
             animation: slideUp 0.5s ease-out;
         }
         @keyframes slideUp {
@@ -419,7 +419,7 @@
             border: none;
             color: var(--text-color);
             cursor: pointer;
-            margin-top: 0.3rem; /* Reduzido */
+            margin-top: 0.3rem;
             transition: background 0.3s ease;
         }
         .sponsor-info-button:hover { background: var(--button-hover); }
@@ -429,7 +429,7 @@
             background: rgba(255, 255, 255, 0.1);
             border-radius: 0.2rem;
             overflow: hidden;
-            margin-bottom: 0.1rem; /* Encostado na borda */
+            margin-bottom: 0.1rem;
         }
         .progress {
             height: 100%;
@@ -555,11 +555,11 @@
             <h3>How Sponsors Work</h3>
             <p>Support MonFaucet by donating:</p>
             <ul>
-                <li><i class="fas fa-gem"></i> Diamond: 1000 MON - 8 days</li>
-                <li><i class="fas fa-trophy"></i> Gold: 700 MON - 6 days</li>
-                <li><i class="fas fa-medal"></i> Silver: 500 MON - 4 days</li>
-                <li><i class="fas fa-award"></i> Bronze: 200 MON - 2 days</li>
-                <li><i class="fas fa-coins"></i> Copper: 100 MON - 1 day</li>
+                <li><i class="fas fa-gem"></i> Diamond: 1000 MON - 7 days</li>
+                <li><i class="fas fa-trophy"></i> Gold: 700 MON - 4 days</li>
+                <li><i class="fas fa-medal"></i> Silver: 500 MON - 2 days</li>
+                <li><i class="fas fa-award"></i> Bronze: 200 MON - 1 day</li>
+                <li><i class="fas fa-coins"></i> Copper: 100 MON - 12 hours</li>
             </ul>
             <p>Your X profile will be displayed here!</p>
             <button class="modal-button" id="close-sponsor-info">Close</button>
@@ -971,7 +971,7 @@
                 const sponsorLevels = ["Diamond", "Gold", "Silver", "Bronze", "Copper"];
                 const sponsorIcons = ["fa-gem", "fa-trophy", "fa-medal", "fa-award", "fa-coins"];
                 const sponsorAmounts = ["1000", "700", "500", "200", "100"];
-                const sponsorDurations = [8 * 86400, 6 * 86400, 4 * 86400, 2 * 86400, 1 * 86400]; // Corrigido para 8, 6, 4, 2, 1 dias
+                const sponsorDurations = [7 * 86400, 4 * 86400, 2 * 86400, 1 * 86400, 12 * 3600]; // Corrigido: 7 dias, 4 dias, 2 dias, 1 dia, 12 horas
                 sponsorsList.innerHTML = "";
 
                 for (let i = 0; i < 5; i++) {
@@ -986,7 +986,7 @@
                                     <button onclick="document.getElementById('donateAmount').value = '${amount}'; donate();">Donate</button>
                                 </div>
                                 <p><i class="fas fa-coins"></i> ${amount} MON</p>
-                                <p><i class="fas fa-clock"></i> ${duration / 86400} days</p>
+                                <p><i class="fas fa-clock"></i> ${i === 4 ? "12 hours" : `${duration / 86400} days`}</p>
                                 <div class="progress-bar"><div class="progress" style="width: 0%"></div></div>
                             </div>`;
                     } else {
