@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MonFaucet</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --background-start: #000000;
+            --background-end: #0F1419;
+            --primary-color: #007AFF;
+            --secondary-color: #00D4FF;
+            --accent-color: #FF6F00;
+            --text-color: #FFFFFF;
+            --box-background: linear-gradient(to bottom, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.07));
+            --box-border: rgba(255, 255, 255, 0.1);
+            --shadow-color: rgba(0, 0, 0, 0.3);
+            --button-hover: #00D4FF;
+            --disabled-opacity: 0.5;
+            --font-family: 'Poppins', 'Montserrat', Arial, sans-serif;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: var(--font-family);
+            background: linear-gradient(to bottom, var(--background-start), var(--background-end));
+            color: var(--text-color);
+            min-height: 100vh;
+            text-align: center;
+            overflow-x: hidden;
+            position: relative;
+        }
+        .main-content {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+        canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; }
+        .wallet-info {
+            display: none;
+            width: 100%;
+            max-width: 24rem;
+            margin-bottom: 0.5rem;
+            padding: 0.8rem 1.5rem;
+            background: var(--box-background);
+            border-radius: 1rem;
+            border: 1px solid var(--box-border);
+            box-shadow: 0 4px 12px var(--shadow-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .wallet-info button {
+            background: var(--primary-color);
+            color: var(--text-color);
+            padding: 0.4rem 0.8rem;
+            border-radius: 0.7rem;
+            border: 1px solid var(--box-border);
+            cursor: pointer;
+            transition: all 0.4s ease-in-out;
+        }
+        .wallet-info button:hover { background: var(--button-hover); }
+        .faucet-container {
+            width: 100%;
+            max-width: 24rem;
+            padding: 2rem;
+            background: var(--box-background);
+            backdrop-filter: blur(20px);
+            border-radius: 1rem;
+            border: 1px solid var(--box-border);
+            box-shadow: 0 8px 16px var(--shadow-color);
+            min-height: 450px;
+            position: relative;
+        }
+        .faucet-title {
+            font-size: 2.8rem;
+            font-weight: bold;
+            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 1.5rem;
+        }
+        .faucet-description {
+            font-size: 1rem;
+            margin: 1.5rem 0;
+            opacity: 0.9;
+        }
+        .info-box {
+            background: var(--box-background);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            margin-bottom: 1.2rem;
+        }
+        .info-box div { display: flex; justify-content: space-between; margin-bottom: 0.5rem; }
+        .task-button, .claim-button {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            margin-bottom: 0.6rem;
+            background: var(--box-background);
+            border-radius: 0.75rem;
+            color: var(--text-color);
+            border: 1px solid var(--box-border);
+            box-shadow: 0 3px 10px var(--shadow-color);
+            font-weight: bold;
+            transition: all 0.4s ease-in-out;
+            cursor: pointer;
+        }
+        .task-button:hover, .claim-button:hover {
+            transform: scale(1.05);
+            background: rgba(255, 255, 255, 0.08);
+        }
+        .claim-button {
+            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+            opacity: var(--disabled-opacity);
+            cursor: not-allowed;
+            justify-content: center;
+            position: relative;
+        }
+        .claim-button.enabled { opacity: 1; cursor: pointer; }
+        .claim-button .spinner {
+            display: none;
+            position: absolute;
+            left: 10px;
+            width: 20px;
+            height: 20px;
+            border: 3px solid var(--text-color);
+            border-top: 3px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .claim-button.loading .spinner { display: inline-block; }
+        .claim-button.loading span { margin-left: 25px; }
+        .status { font-size: 0.9rem; margin-top: 1rem; opacity: 0.8; }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--box-background);
+            padding: 1.5rem;
+            border-radius: 1rem;
+            border: 1px solid var(--box-border);
+            box-shadow: 0 10px 20px var(--shadow-color);
+            z-index: 30;
+        }
+        .modal-buttons {
+            margin-top: 1rem;
+            display: flex;
+            gap: 0.8rem;
+            justify-content: center;
+        }
+        .modal-button {
+            background: var(--primary-color);
+            color: var(--text-color);
+            padding: 0.5rem 1rem;
+            border-radius: 0.7rem;
+            cursor: pointer;
+            transition: all 0.4s ease-in-out;
+        }
+        .modal-button:hover { background: var(--button-hover); }
+        #modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 20;
+            backdrop-filter: blur(5px);
+        }
+        .decorative-blur {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(2.5rem);
+            pointer-events: none;
+            animation: pulse 4s infinite ease-in-out;
+        }
+        @keyframes pulse {
+            0% { opacity: 0.2; } 50% { opacity: 0.4; } 100% { opacity: 0.2; }
+        }
+        .blur-1 { top: 25%; left: 25%; width: 14rem; height: 14rem; background: rgba(0, 122, 255, 0.2); }
+        .blur-2 { bottom: 33%; right: 33%; width: 20rem; height: 20rem; background: rgba(0, 212, 255, 0.1); }
+        footer {
+            position: fixed;
+            bottom: 10px;
+            width: 100%;
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--text-color);
+            opacity: 0.7;
+        }
+        footer a {
+            color: var(--primary-color);
+            text-decoration: none;
+            margin: 0 0.5rem;
+        }
+        footer a:hover { color: var(--secondary-color); }
+        .donate-container {
+            display: none; /* Desabilitado temporariamente */
+            width: 100%;
+            max-width: 24rem;
+            margin-top: 1rem;
+            padding: 1rem;
+            background: var(--box-background);
+            border-radius: 1rem;
+            border: 1px solid var(--box-border);
+            box-shadow: 0 4px 12px var(--shadow-color);
+            text-align: center;
+            font-size: 0.9rem;
+        }
+        .donate-container button {
+            background: var(--accent-color);
+            color: var(--text-color);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            border: none;
+            cursor: pointer;
+            animation: pulseButton 1.5s infinite;
+        }
+        @keyframes pulseButton {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .ad-container {
+            position: absolute;
+            width: 300px;
+            height: 600px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--box-border);
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            color: var(--text-color);
+            opacity: 0.8;
+        }
+        .ad-left { left: calc(50% - 650px); top: 50%; transform: translateY(-50%); }
+        .ad-right { right: calc(50% - 650px); top: 50%; transform: translateY(-50%); }
+        @media (max-width: 1400px) { .ad-container { display: none; } }
+        @media (max-width: 768px) {
+            .faucet-container { max-width: 90%; padding: 1.5rem; min-height: 400px; }
+            .faucet-title { font-size: 2rem; }
+            .task-button, .claim-button { padding: 0.8rem; }
+            .wallet-info { max-width: 90%; top: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-content">
+        <canvas></canvas>
+        <div class="ad-container ad-left">Espaço de Anúncio (300x600)</div>
+        <div class="wallet-info" id="walletInfo">
+            <span id="walletAddress"></span>
+            <button id="disconnectWallet">Desconectar</button>
+        </div>
+        <div class="faucet-container">
+            <div class="faucet-title">MonFaucet</div>
+            <p class="faucet-description">Reivindique tokens MON na Monad Testnet</p>
+            <div class="task-buttons" id="taskButtons">
+                <button class="task-button" id="connectWalletButton">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-wallet icon"></i>
+                        <span>Conectar Carteira</span>
+                    </div>
+                    <i class="fas fa-arrow-right arrow"></i>
+                </button>
+                <button class="task-button" data-task="followX" disabled>
+                    <div class="flex items-center gap-3">
+                        <i class="fab fa-twitter icon"></i>
+                        <span>Seguir no X</span>
+                    </div>
+                    <i class="fas fa-arrow-right arrow"></i>
+                </button>
+                <button class="task-button" data-task="likePost" disabled>
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-thumbs-up icon"></i>
+                        <span>Curtir Postagem no X</span>
+                    </div>
+                    <i class="fas fa-arrow-right arrow"></i>
+                </button>
+            </div>
+            <div class="info-box" id="infoBox">
+                <div><span>Disponível</span><span id="available">0.00 MON</span></div>
+                <div><span>Valor da Reivindicação</span><span id="claimAmount">0.01 MON</span></div>
+                <div><span>Rede</span><span>Monad Testnet</span></div>
+                <div><span>Última Reivindicação</span><span id="lastClaim">Nenhum</span></div>
+            </div>
+            <button class="claim-button" id="claimButton" disabled>
+                <div class="spinner"></div>
+                <span>Reivindicar Tokens</span>
+            </button>
+            <div class="status" id="status"></div>
+        </div>
+        <div class="donate-container">
+            Ajude os Nads, doe para a faucet: 
+            <button id="copyContractBtn">Copiar Endereço do Contrato</button>
+        </div>
+        <div class="ad-container ad-right">Espaço de Anúncio (300x600)</div>
+        <div class="decorative-blur blur-1"></div>
+        <div class="decorative-blur blur-2"></div>
+    </div>
+    <div id="modal-overlay"></div>
+    <div id="confirmation-modal" class="modal">
+        <div class="modal-content">Você completou a tarefa?</div>
+        <div class="modal-buttons">
+            <button class="modal-button" id="confirm-yes">Sim</button>
+            <button class="modal-button" id="confirm-no">Não</button>
+        </div>
+    </div>
+    <footer>
+        <a href="#">Sobre</a> | <a href="#">Contato</a> | <a href="#">Termos</a>
+    </footer>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+    <script>
+        if (typeof ethers === 'undefined') {
+            document.getElementById('status').textContent = 'Erro: ethers.js não carregou. Por favor, recarregue a página.';
+            throw new Error('ethers.js não carregado');
+        }
+
+        const CONTRACT_ADDRESS = '0x6c31b2a0CA297Eb3ea020826881c812b403b3CE5';
+        const ABI = [
+            {"inputs":[],"stateMutability":"nonpayable","type":"constructor"},
+            {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"Claimed","type":"event"},
+            {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"sender","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"Deposited","type":"event"},
+            {"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"newAmount","type":"uint256"}],"name":"ClaimAmountUpdated","type":"event"},
+            {"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"newCooldown","type":"uint256"}],"name":"CooldownUpdated","type":"event"},
+            {"anonymous":false,"inputs":[{"indexed":false,"internalType":"bool","name":"isPaused","type":"bool"}],"name":"Paused","type":"event"},
+            {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"Withdrawn","type":"event"},
+            {"inputs":[],"name":"claim","outputs":[],"stateMutability":"nonpayable","type":"function"},
+            {"inputs":[],"name":"claimAmount","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+            {"inputs":[],"name":"cooldownPeriod","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+            {"inputs":[],"name":"deposit","outputs":[],"stateMutability":"payable","type":"function"},
+            {"inputs":[],"name":"getBalance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+            {"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"lastClaim","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+            {"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+            {"inputs":[],"name":"paused","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},
+            {"inputs":[{"internalType":"uint256","name":"newAmount","type":"uint256"}],"name":"setClaimAmount","outputs":[],"stateMutability":"nonpayable","type":"function"},
+            {"inputs":[{"internalType":"uint256","name":"newCooldown","type":"uint256"}],"name":"setCooldownPeriod","outputs":[],"stateMutability":"nonpayable","type":"function"},
+            {"inputs":[{"internalType":"bool","name":"_paused","type":"bool"}],"name":"setPaused","outputs":[],"stateMutability":"nonpayable","type":"function"},
+            {"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"withdraw","outputs":[],"stateMutability":"nonpayable","type":"function"},
+            {"stateMutability":"payable","type":"receive"}
+        ];
+        const socialLinks = {
+            "followX": "https://x.com/_roneslira?follow=true",
+            "likePost": "https://x.com/_roneslira/status/123456789"
+        };
+        const MONAD_TESTNET = {
+            chainId: '0x279F', // 10143 em hexadecimal (corrigido)
+            chainName: 'Monad Testnet',
+            rpcUrls: ['https://testnet-rpc.monad.xyz/'],
+            nativeCurrency: { name: 'MON', symbol: 'MON', decimals: 18 },
+            blockExplorerUrls: ['https://testnet.monadexplorer.com/']
+        };
+
+        let walletConnected = localStorage.getItem('walletConnected') === 'true';
+        let tasksCompleted = { connectWallet: false, followX: false, likePost: false };
+        const taskButtons = document.querySelectorAll('.task-button');
+        const claimButton = document.getElementById('claimButton');
+        const claimButtonText = claimButton.querySelector('span');
+        const status = document.getElementById('status');
+        const connectWalletButton = document.getElementById('connectWalletButton');
+        const modal = document.getElementById('confirmation-modal');
+        const modalOverlay = document.getElementById('modal-overlay');
+        const walletInfo = document.getElementById('walletInfo');
+        const walletAddress = document.getElementById('walletAddress');
+        const disconnectWallet = document.getElementById('disconnectWallet');
+        const available = document.getElementById('available');
+        const claimAmount = document.getElementById('claimAmount');
+        const lastClaim = document.getElementById('lastClaim');
+
+        function updateTaskButtons() {
+            taskButtons.forEach(button => {
+                const task = button.getAttribute('data-task');
+                if (task) {
+                    button.disabled = !walletConnected || tasksCompleted[task];
+                    button.style.opacity = tasksCompleted[task] ? '0.5' : '1';
+                }
+            });
+            connectWalletButton.disabled = walletConnected;
+            connectWalletButton.style.opacity = walletConnected ? '0.5' : '1';
+        }
+
+        async function connectWallet() {
+            if (!window.ethereum) {
+                alert('Por favor, instale o MetaMask ou uma carteira compatível com EVM.');
+                return;
+            }
+            try {
+                const provider = new ethers.providers.Web3Provider(window.ethereum);
+                const accounts = await provider.send("eth_requestAccounts", []);
+                const network = await provider.getNetwork();
+                if (network.chainId !== 10143) {
+                    try {
+                        await window.ethereum.request({
+                            method: 'wallet_switchEthereumChain',
+                            params: [{ chainId: '0x279F' }], // Corrigido para 10143
+                        });
+                    } catch (switchError) {
+                        if (switchError.code === 4902 || switchError.code === -32603) {
+                            await window.ethereum.request({
+                                method: 'wallet_addEthereumChain',
+                                params: [MONAD_TESTNET],
+                            });
+                            await window.ethereum.request({
+                                method: 'wallet_switchEthereumChain',
+                                params: [{ chainId: '0x279F' }], // Corrigido para 10143
+                            });
+                        } else {
+                            throw new Error('Falha ao mudar para Monad Testnet. Por favor, mude manualmente para Monad Testnet (Chain ID: 10143).');
+                        }
+                    }
+                }
+                walletConnected = true;
+                localStorage.setItem('walletConnected', 'true');
+                const signer = provider.getSigner();
+                const address = await signer.getAddress();
+                walletAddress.textContent = `${address.slice(0, 6)}...${address.slice(-4)}`;
+                walletInfo.style.display = 'flex';
+                tasksCompleted.connectWallet = true;
+                updateTaskButtons();
+                await updateContractInfo();
+                checkClaimStatus();
+                status.textContent = 'Carteira conectada! Complete as tarefas para reivindicar.';
+            } catch (error) {
+                console.error('Erro na conexão da carteira:', error);
+                status.textContent = 'Falha ao conectar a carteira: ' + (error.message || 'Erro desconhecido');
+            }
+        }
+
+        connectWalletButton.addEventListener('click', connectWallet);
+
+        disconnectWallet.addEventListener('click', () => {
+            walletConnected = false;
+            localStorage.setItem('walletConnected', 'false');
+            walletInfo.style.display = 'none';
+            tasksCompleted = { connectWallet: false, followX: false, likePost: false };
+            updateTaskButtons();
+            claimButton.disabled = true;
+            claimButton.classList.remove('enabled');
+            claimButtonText.textContent = 'Reivindicar Tokens';
+            status.textContent = 'Conecte sua carteira para começar.';
+            lastClaim.textContent = 'Nenhum';
+        });
+
+        taskButtons.forEach(button => {
+            const task = button.getAttribute('data-task');
+            if (task) {
+                button.addEventListener('click', () => {
+                    if (!walletConnected) {
+                        alert('Conecte sua carteira primeiro.');
+                        return;
+                    }
+                    if (tasksCompleted[task]) return;
+                    const link = socialLinks[task];
+                    window.open(link, '_blank');
+                    modal.style.display = 'block';
+                    modalOverlay.style.display = 'block';
+                    document.getElementById('confirm-yes').onclick = () => {
+                        tasksCompleted[task] = true;
+                        updateTaskButtons();
+                        checkClaimStatus();
+                        modal.style.display = 'none';
+                        modalOverlay.style.display = 'none';
+                    };
+                    document.getElementById('confirm-no').onclick = () => {
+                        modal.style.display = 'none';
+                        modalOverlay.style.display = 'none';
+                    };
+                });
+            }
+        });
+
+        async function updateContractInfo() {
+            try {
+                const provider = window.ethereum && walletConnected ?
+                    new ethers.providers.Web3Provider(window.ethereum) :
+                    new ethers.providers.JsonRpcProvider(MONAD_TESTNET.rpcUrls[0]);
+                const contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, provider);
+                const balance = await contract.getBalance();
+                const claimAmt = ethers.utils.formatEther(await contract.claimAmount());
+                const cooldown = (await contract.cooldownPeriod()).toString();
+                localStorage.setItem('claimAmount', claimAmt);
+                localStorage.setItem('cooldownPeriod', cooldown);
+                available.textContent = ethers.utils.formatEther(balance) + ' MON';
+                claimAmount.textContent = claimAmt + ' MON';
+            } catch (error) {
+                console.error('Erro ao buscar informações do contrato:', error);
+                available.textContent = 'Erro';
+                claimAmount.textContent = '0.01 MON';
+            }
+        }
+
+        async function checkClaimStatus() {
+            if (!walletConnected) {
+                claimButton.disabled = true;
+                claimButton.classList.remove('enabled');
+                claimButtonText.textContent = 'Reivindicar Tokens';
+                status.textContent = 'Conecte sua carteira para começar.';
+                return;
+            }
+            try {
+                const provider = new ethers.providers.Web3Provider(window.ethereum);
+                const signer = provider.getSigner();
+                const contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+                const address = await signer.getAddress();
+                const lastClaimTime = await contract.lastClaim(address);
+                const cooldown = parseInt(await contract.cooldownPeriod());
+                const paused = await contract.paused();
+                const now = Math.floor(Date.now() / 1000);
+
+                if (lastClaimTime.toNumber() > 0) {
+                    lastClaim.textContent = new Date(lastClaimTime.toNumber() * 1000).toLocaleString();
+                }
+
+                if (paused) {
+                    claimButton.disabled = true;
+                    claimButton.classList.remove('enabled');
+                    claimButtonText.textContent = 'Reivindicar Tokens';
+                    status.textContent = 'Reivindicações pausadas pelo administrador.';
+                } else if (now < lastClaimTime.toNumber() + cooldown) {
+                    startCooldownCountdown(lastClaimTime, cooldown);
+                    claimButton.disabled = true;
+                    claimButton.classList.remove('enabled');
+                    status.textContent = `Cooldown ativo. Aguarde até ${new Date((lastClaimTime.toNumber() + cooldown) * 1000).toLocaleString()} para reivindicar novamente.`;
+                } else if (!tasksCompleted.followX || !tasksCompleted.likePost) {
+                    claimButtonText.textContent = 'Reivindicar Tokens';
+                    claimButton.disabled = true;
+                    claimButton.classList.remove('enabled');
+                    status.textContent = 'Complete todas as tarefas para reivindicar tokens.';
+                } else {
+                    const claimAmt = ethers.utils.formatEther(await contract.claimAmount());
+                    claimButtonText.textContent = `Reivindicar ${claimAmt} MON`;
+                    claimButton.disabled = false;
+                    claimButton.classList.add('enabled');
+                    status.textContent = 'Pronto para reivindicar!';
+                }
+            } catch (error) {
+                console.error('Erro ao verificar status de reivindicação:', error);
+                claimButtonText.textContent = 'Reivindicar Tokens';
+                claimButton.disabled = true;
+                claimButton.classList.remove('enabled');
+                status.textContent = 'Erro ao verificar o contrato. Tente novamente.';
+            }
+        }
+
+        function startCooldownCountdown(lastClaimTime, cooldown) {
+            const endTime = lastClaimTime.toNumber() + cooldown;
+            const updateTimer = () => {
+                const now = Math.floor(Date.now() / 1000);
+                const remaining = endTime - now;
+                if (remaining > 0) {
+                    const hours = Math.floor(remaining / 3600);
+                    const minutes = Math.floor((remaining % 3600) / 60);
+                    const seconds = remaining % 60;
+                    claimButtonText.textContent = `Próxima reivindicação em ${hours}h ${minutes}m ${seconds}s`;
+                    setTimeout(updateTimer, 1000);
+                } else {
+                    checkClaimStatus();
+                }
+            };
+            updateTimer();
+        }
+
+        async function claimTokens() {
+            if (!walletConnected || !tasksCompleted.followX || !tasksCompleted.likePost) {
+                alert('Conecte a carteira e complete todas as tarefas primeiro.');
+                return;
+            }
+            claimButton.classList.add('loading');
+            claimButtonText.textContent = 'Reivindicando...';
+            claimButton.disabled = true;
+            try {
+                const provider = new ethers.providers.Web3Provider(window.ethereum);
+                const signer = provider.getSigner();
+                const contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+                const tx = await contract.claim({ gasLimit: 100000 });
+                await tx.wait();
+                alert('Tokens reivindicados com sucesso!');
+                tasksCompleted.followX = false;
+                tasksCompleted.likePost = false;
+                updateTaskButtons();
+                await updateContractInfo();
+                checkClaimStatus();
+            } catch (error) {
+                console.error('Erro na reivindicação:', error);
+                if (error.reason && error.reason.includes('Periodo de cooldown nao expirou')) {
+                    status.textContent = 'Cooldown ativo. Por favor, aguarde 12 horas para a próxima reivindicação.';
+                } else {
+                    alert('Falha ao reivindicar tokens: ' + (error.message || 'Erro desconhecido'));
+                    status.textContent = 'Erro durante a reivindicação. Tente novamente.';
+                }
+                claimButtonText.textContent = 'Reivindicar Tokens';
+            } finally {
+                claimButton.classList.remove('loading');
+                claimButton.disabled = false;
+                checkClaimStatus();
+            }
+        }
+
+        function copyContractAddress() {
+            navigator.clipboard.writeText(CONTRACT_ADDRESS).then(() => {
+                alert('Endereço do contrato copiado para a área de transferência: ' + CONTRACT_ADDRESS);
+            }).catch(err => {
+                console.error('Falha ao copiar o endereço do contrato:', err);
+                alert('Falha ao copiar o endereço do contrato. Tente novamente.');
+            });
+        }
+
+        claimButton.addEventListener('click', claimTokens);
+        document.getElementById('copyContractBtn').addEventListener('click', copyContractAddress);
+
+        window.addEventListener('load', () => {
+            updateContractInfo();
+            if (walletConnected && window.ethereum) {
+                const provider = new ethers.providers.Web3Provider(window.ethereum);
+                provider.listAccounts().then(accounts => {
+                    if (accounts.length > 0) {
+                        walletAddress.textContent = `${accounts[0].slice(0, 6)}...${accounts[0].slice(-4)}`;
+                        walletInfo.style.display = 'flex';
+                        tasksCompleted.connectWallet = true;
+                        updateTaskButtons();
+                        checkClaimStatus();
+                        status.textContent = 'Carteira conectada! Complete as tarefas para reivindicar.';
+                    } else {
+                        walletConnected = false;
+                        localStorage.setItem('walletConnected', 'false');
+                        checkClaimStatus();
+                    }
+                });
+            } else {
+                checkClaimStatus();
+            }
+        });
+
+        // Animação de partículas no canvas
+        const canvas = document.querySelector('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2 + 0.5;
+                this.speedX = Math.random() * 0.3 - 0.15;
+                this.speedY = Math.random() * 0.3 - 0.15;
+                this.color = `rgba(${Math.random() * 100 + 155}, ${Math.random() * 100 + 155}, 255, 0.1)`;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
+                if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
+            }
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+            }
+        }
+
+        const particles = [];
+        for (let i = 0; i < 30; i++) particles.push(new Particle());
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            requestAnimationFrame(animate);
+        }
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+        animate();
+    </script>
+</body>
+</html>
