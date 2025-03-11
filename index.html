@@ -4,120 +4,346 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MonFaucet</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
     <style>
+        :root {
+            --background-start: #000000;
+            --background-end: #0F1419;
+            --primary-color: #007AFF;
+            --secondary-color: #00D4FF;
+            --accent-color: #FF6F00;
+            --text-color: #FFFFFF;
+            --box-background: linear-gradient(to bottom, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.07));
+            --box-border: rgba(255, 255, 255, 0.1);
+            --shadow-color: rgba(0, 0, 0, 0.3);
+            --button-hover: #00D4FF;
+            --disabled-opacity: 0.5;
+            --font-family: 'Poppins', 'Montserrat', Arial, sans-serif;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
+            font-family: var(--font-family);
+            background: linear-gradient(to bottom, var(--background-start), var(--background-end));
+            color: var(--text-color);
             min-height: 100vh;
-        }
-        .container {
-            display: flex;
-            width: 100%;
-            max-width: 1200px;
-            gap: 20px;
-        }
-        .main-container {
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            width: 50%;
             text-align: center;
+            overflow-x: hidden;
+            position: relative;
         }
-        .side-container {
-            width: 25%;
-            background-color: #fff;
+        .main-content {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
             padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            position: relative;
+            z-index: 1;
         }
-        .sponsor-container {
-            margin-bottom: 10px;
-            padding: 10px;
-            border-radius: 5px;
+        canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; }
+        .wallet-info {
+            display: none;
+            width: 100%;
+            max-width: 24rem;
+            margin-bottom: 0.5rem;
+            padding: 0.8rem 1.5rem;
+            background: var(--box-background);
+            border-radius: 1rem;
+            border: 1px solid var(--box-border);
+            box-shadow: 0 4px 12px var(--shadow-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
         }
-        .sponsor-diamond { border: 2px solid #00b7ff; background-color: #e6f7ff; }
-        .sponsor-gold { border: 2px solid #ffd700; background-color: #fffacd; }
-        .sponsor-silver { border: 2px solid #c0c0c0; background-color: #f0f0f0; }
-        .sponsor-bronze { border: 2px solid #cd7f32; background-color: #ffebcd; }
-        .sponsor-copper { border: 2px solid #b87333; background-color: #ffe4e1; }
-        button {
-            padding: 10px 20px;
-            background-color: #007bff;
-            color: #fff;
-            border: none;
-            border-radius: 5px;
+        .wallet-info button {
+            background: var(--primary-color);
+            color: var(--text-color);
+            padding: 0.4rem 0.8rem;
+            border-radius: 0.7rem;
+            border: 1px solid var(--box-border);
+            cursor: pointer;
+            transition: all 0.4s ease-in-out;
+        }
+        .wallet-info button:hover { background: var(--button-hover); }
+        .faucet-container {
+            width: 100%;
+            max-width: 24rem;
+            padding: 2rem;
+            background: var(--box-background);
+            backdrop-filter: blur(20px);
+            border-radius: 1rem;
+            border: 1px solid var(--box-border);
+            box-shadow: 0 8px 16px var(--shadow-color);
+            min-height: 450px;
+            position: relative;
+        }
+        .faucet-title {
+            font-size: 2.8rem;
+            font-weight: bold;
+            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 1.5rem;
+        }
+        .faucet-description {
+            font-size: 1rem;
+            margin: 1.5rem 0;
+            opacity: 0.9;
+        }
+        .info-box {
+            background: var(--box-background);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            margin-bottom: 1.2rem;
+        }
+        .info-box div { display: flex; justify-content: space-between; margin-bottom: 0.5rem; }
+        .task-button, .claim-button {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            margin-bottom: 0.6rem;
+            background: var(--box-background);
+            border-radius: 0.75rem;
+            color: var(--text-color);
+            border: 1px solid var(--box-border);
+            box-shadow: 0 3px 10px var(--shadow-color);
+            font-weight: bold;
+            transition: all 0.4s ease-in-out;
             cursor: pointer;
         }
-        button:hover { background-color: #0056b3; }
-        button:disabled { background-color: #ccc; cursor: not-allowed; }
-        input { padding: 5px; margin: 5px 0; width: 80%; }
-        #status { margin-top: 10px; color: #555; }
+        .task-button:hover, .claim-button:hover {
+            transform: scale(1.05);
+            background: rgba(255, 255, 255, 0.08);
+        }
+        .claim-button {
+            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+            opacity: var(--disabled-opacity);
+            cursor: not-allowed;
+            justify-content: center;
+            position: relative;
+        }
+        .claim-button.enabled { opacity: 1; cursor: pointer; }
+        .status { font-size: 0.9rem; margin-top: 1rem; opacity: 0.8; }
         .modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--box-background);
+            padding: 1.5rem;
+            border-radius: 1rem;
+            border: 1px solid var(--box-border);
+            box-shadow: 0 10px 20px var(--shadow-color);
+            z-index: 30;
+        }
+        .modal-buttons {
+            margin-top: 1rem;
+            display: flex;
+            gap: 0.8rem;
+            justify-content: center;
+        }
+        .modal-button {
+            background: var(--primary-color);
+            color: var(--text-color);
+            padding: 0.5rem 1rem;
+            border-radius: 0.7rem;
+            cursor: pointer;
+            transition: all 0.4s ease-in-out;
+        }
+        .modal-button:hover { background: var(--button-hover); }
+        #modal-overlay {
             display: none;
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            justify-content: center;
-            align-items: center;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 20;
+            backdrop-filter: blur(5px);
         }
-        .modal-content {
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 10px;
-            width: 300px;
+        .decorative-blur {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(2.5rem);
+            pointer-events: none;
+            animation: pulse 4s infinite ease-in-out;
+        }
+        @keyframes pulse {
+            0% { opacity: 0.2; } 50% { opacity: 0.4; } 100% { opacity: 0.2; }
+        }
+        .blur-1 { top: 25%; left: 25%; width: 14rem; height: 14rem; background: rgba(0, 122, 255, 0.2); }
+        .blur-2 { bottom: 33%; right: 33%; width: 20rem; height: 20rem; background: rgba(0, 212, 255, 0.1); }
+        footer {
+            position: fixed;
+            bottom: 10px;
+            width: 100%;
             text-align: center;
+            font-size: 0.9rem;
+            color: var(--text-color);
+            opacity: 0.7;
+        }
+        footer a {
+            color: var(--primary-color);
+            text-decoration: none;
+            margin: 0 0.5rem;
+        }
+        footer a:hover { color: var(--secondary-color); }
+        .donate-container {
+            width: 100%;
+            max-width: 24rem;
+            margin-top: 1rem;
+            padding: 1rem;
+            background: var(--box-background);
+            border-radius: 1rem;
+            border: 1px solid var(--box-border);
+            box-shadow: 0 4px 12px var(--shadow-color);
+            text-align: center;
+            font-size: 0.9rem;
+        }
+        .donate-container input {
+            padding: 0.5rem;
+            margin: 0.5rem 0;
+            width: 80%;
+            border-radius: 0.5rem;
+            border: 1px solid var(--box-border);
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-color);
+        }
+        .donate-container button {
+            background: var(--accent-color);
+            color: var(--text-color);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            border: none;
+            cursor: pointer;
+            animation: pulseButton 1.5s infinite;
+        }
+        @keyframes pulseButton {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .ad-container, .sponsors-container {
+            position: absolute;
+            width: 300px;
+            background: var(--box-background);
+            border: 1px solid var(--box-border);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            text-align: left;
+        }
+        .sponsors-container {
+            left: calc(50% - 650px);
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        .ad-container {
+            right: calc(50% - 650px);
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        .sponsor-item {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .sponsor-diamond { border: 2px solid #00b7ff; }
+        .sponsor-gold { border: 2px solid #ffd700; }
+        .sponsor-silver { border: 2px solid #c0c0c0; }
+        .sponsor-bronze { border: 2px solid #cd7f32; }
+        .sponsor-copper { border: 2px solid #b87333; }
+        @media (max-width: 1400px) { .ad-container, .sponsors-container { display: none; } }
+        @media (max-width: 768px) {
+            .faucet-container { max-width: 90%; padding: 1.5rem; min-height: 400px; }
+            .faucet-title { font-size: 2rem; }
+            .task-button, .claim-button { padding: 0.8rem; }
+            .wallet-info { max-width: 90%; top: 10px; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="side-container" id="sponsors-container">
+    <div class="main-content">
+        <canvas></canvas>
+        <div class="sponsors-container" id="sponsors-container">
             <h2>Sponsors</h2>
             <div id="sponsors-list"></div>
         </div>
-        <div class="main-container">
-            <h1>MonFaucet</h1>
-            <button id="connectButton">Connect Wallet</button>
-            <div id="faucet-container" style="display: none;">
-                <p>Balance: <span id="balance">0</span> MON</p>
-                <button id="claimButton" disabled>Claim Tokens</button>
-            </div>
-            <div class="donate-container">
-                <h3>Donate</h3>
-                <input type="number" id="donateAmount" placeholder="Enter amount in MON (e.g., 100)" step="0.01">
-                <button id="donateButton">Donate</button>
-            </div>
-            <div id="status"></div>
-            <div id="sponsorModal" class="modal">
-                <div class="modal-content">
-                    <h3>Congratulations!</h3>
-                    <p>You are a <span id="sponsorLevel"></span> Sponsor!</p>
-                    <input type="text" id="xProfileInput" placeholder="Enter your X profile URL">
-                    <button id="submitXProfile">Submit</button>
-                    <p id="modalStatus"></p>
-                </div>
-            </div>
+        <div class="wallet-info" id="walletInfo">
+            <span id="walletAddress"></span>
+            <button id="disconnectWallet">Disconnect</button>
         </div>
-        <div class="side-container" id="ad-container">
-            <h2>Ad Space</h2>
-            <p>Your ad could be here!</p>
+        <div class="faucet-container">
+            <div class="faucet-title">MonFaucet</div>
+            <p class="faucet-description">Claim MON tokens on Monad Testnet</p>
+            <div class="task-buttons" id="taskButtons">
+                <button class="task-button" id="connectWalletButton">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-wallet icon"></i>
+                        <span>Connect Wallet</span>
+                    </div>
+                    <i class="fas fa-arrow-right arrow"></i>
+                </button>
+                <button class="task-button" id="followSponsorsButton" disabled>
+                    <div class="flex items-center gap-3">
+                        <i class="fab fa-twitter icon"></i>
+                        <span>Follow Sponsors</span>
+                    </div>
+                    <i class="fas fa-arrow-right arrow"></i>
+                </button>
+            </div>
+            <div class="info-box" id="infoBox">
+                <div><span>Available</span><span id="available">0.00 MON</span></div>
+                <div><span>Claim Amount</span><span id="claimAmount">0.01 MON</span></div>
+                <div><span>Network</span><span>Monad Testnet</span></div>
+                <div><span>Last Claim</span><span id="lastClaim">None</span></div>
+            </div>
+            <button class="claim-button" id="claimButton" disabled>Claim Tokens</button>
+            <div class="status" id="status"></div>
+        </div>
+        <div class="donate-container">
+            <h3>Donate</h3>
+            <input type="number" id="donateAmount" placeholder="Enter amount in MON (e.g., 100)" step="0.01">
+            <button id="donateButton">Donate</button>
+        </div>
+        <div class="ad-container">Ad Space<br>Your ad could be here!</div>
+        <div class="decorative-blur blur-1"></div>
+        <div class="decorative-blur blur-2"></div>
+    </div>
+    <div id="modal-overlay"></div>
+    <div id="confirmation-modal" class="modal">
+        <div class="modal-content">Did you complete the task?</div>
+        <div class="modal-buttons">
+            <button class="modal-button" id="confirm-yes">Yes</button>
+            <button class="modal-button" id="confirm-no">No</button>
         </div>
     </div>
+    <div id="sponsor-modal" class="modal">
+        <div class="modal-content">
+            <h3>Congratulations!</h3>
+            <p>You are a <span id="sponsorLevel"></span> Sponsor!</p>
+            <input type="text" id="xProfileInput" placeholder="Enter your X profile URL">
+            <button class="modal-button" id="submitXProfile">Submit</button>
+            <p id="modalStatus"></p>
+        </div>
+    </div>
+    <footer>
+        <a href="#">About</a> | <a href="#">Contact</a> | <a href="#">Terms</a>
+    </footer>
 
-    <script src="https://cdn.ethers.io/lib/ethers-5.7.2.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
     <script>
-        const contractAddress = "0xF3D72b267890b0854ad126A26F39Cf221491D35A";
-        const contractABI = [
-            // ABI gerado a partir do contrato
+        const CONTRACT_ADDRESS = "0xF3D72b267890b0854ad126A26F39Cf221491D35A";
+        const ABI = [
             {"inputs":[],"stateMutability":"nonpayable","type":"constructor"},
             {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"Claimed","type":"event"},
             {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"sender","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"Deposited","type":"event"},
@@ -143,89 +369,204 @@
             {"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"withdraw","outputs":[],"stateMutability":"nonpayable","type":"function"},
             {"stateMutability":"payable","type":"receive"}
         ];
+        const MONAD_TESTNET = {
+            chainId: '0x279F', // 10143
+            chainName: 'Monad Testnet',
+            rpcUrls: ['https://testnet-rpc.monad.xyz/'],
+            nativeCurrency: { name: 'MON', symbol: 'MON', decimals: 18 },
+            blockExplorerUrls: ['https://testnet.monadexplorer.com/']
+        };
 
         let provider, signer, contract, account;
+        let tasksCompleted = { connectWallet: false, followSponsors: false };
 
-        const connectButton = document.getElementById("connectButton");
+        const connectWalletButton = document.getElementById("connectWalletButton");
+        const followSponsorsButton = document.getElementById("followSponsorsButton");
         const claimButton = document.getElementById("claimButton");
+        const disconnectWallet = document.getElementById("disconnectWallet");
         const donateButton = document.getElementById("donateButton");
         const donateAmount = document.getElementById("donateAmount");
-        const statusDiv = document.getElementById("status");
-        const sponsorsList = document.getElementById("sponsorsList");
-        const sponsorModal = document.getElementById("sponsorModal");
+        const status = document.getElementById("status");
+        const walletInfo = document.getElementById("walletInfo");
+        const walletAddress = document.getElementById("walletAddress");
+        const available = document.getElementById("available");
+        const claimAmountEl = document.getElementById("claimAmount");
+        const lastClaim = document.getElementById("lastClaim");
+        const modalOverlay = document.getElementById("modal-overlay");
+        const confirmationModal = document.getElementById("confirmation-modal");
+        const sponsorModal = document.getElementById("sponsor-modal");
         const sponsorLevelSpan = document.getElementById("sponsorLevel");
         const xProfileInput = document.getElementById("xProfileInput");
         const submitXProfile = document.getElementById("submitXProfile");
         const modalStatus = document.getElementById("modalStatus");
+        const sponsorsList = document.getElementById("sponsors-list");
 
-        connectButton.addEventListener("click", connectWallet);
+        connectWalletButton.addEventListener("click", connectWallet);
+        followSponsorsButton.addEventListener("click", followSponsors);
         claimButton.addEventListener("click", claimTokens);
+        disconnectWallet.addEventListener("click", disconnect);
         donateButton.addEventListener("click", donate);
         submitXProfile.addEventListener("click", submitSponsorProfile);
 
         async function connectWallet() {
-            if (window.ethereum) {
+            if (!window.ethereum) {
+                status.textContent = "Please install MetaMask!";
+                return;
+            }
+            try {
                 provider = new ethers.providers.Web3Provider(window.ethereum);
                 await provider.send("eth_requestAccounts", []);
                 signer = provider.getSigner();
                 account = await signer.getAddress();
-                contract = new ethers.Contract(contractAddress, contractABI, signer);
+                contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
 
-                connectButton.style.display = "none";
-                document.getElementById("faucet-container").style.display = "block";
+                const network = await provider.getNetwork();
+                if (network.chainId !== 10143) {
+                    await window.ethereum.request({
+                        method: 'wallet_addEthereumChain',
+                        params: [MONAD_TESTNET]
+                    });
+                }
+
+                walletAddress.textContent = `${account.slice(0, 6)}...${account.slice(-4)}`;
+                walletInfo.style.display = "flex";
+                tasksCompleted.connectWallet = true;
+                updateTaskButtons();
                 updateUI();
                 loadSponsors();
-            } else {
-                statusDiv.textContent = "Please install MetaMask!";
+                status.textContent = "Wallet connected!";
+            } catch (error) {
+                status.textContent = `Error: ${error.message}`;
             }
+        }
+
+        function updateTaskButtons() {
+            connectWalletButton.disabled = tasksCompleted.connectWallet;
+            followSponsorsButton.disabled = !tasksCompleted.connectWallet || tasksCompleted.followSponsors;
+            connectWalletButton.style.opacity = tasksCompleted.connectWallet ? "0.5" : "1";
+            followSponsorsButton.style.opacity = tasksCompleted.followSponsors ? "0.5" : "1";
+        }
+
+        async function followSponsors() {
+            if (!tasksCompleted.connectWallet) {
+                status.textContent = "Please connect your wallet first!";
+                return;
+            }
+            const sponsors = await contract.getActiveSponsors();
+            const activeSponsors = sponsors.filter(s => s.donor !== "0x0000000000000000000000000000000000000000" && s.xProfile !== "");
+            if (activeSponsors.length === 0) {
+                tasksCompleted.followSponsors = true;
+                updateTaskButtons();
+                checkClaimStatus();
+                return;
+            }
+            activeSponsors.forEach(sponsor => window.open(sponsor.xProfile, "_blank"));
+            modalOverlay.style.display = "block";
+            confirmationModal.style.display = "block";
+            document.getElementById("confirm-yes").onclick = () => {
+                tasksCompleted.followSponsors = true;
+                updateTaskButtons();
+                checkClaimStatus();
+                closeModal();
+            };
+            document.getElementById("confirm-no").onclick = closeModal;
+        }
+
+        function closeModal() {
+            modalOverlay.style.display = "none";
+            confirmationModal.style.display = "none";
+            sponsorModal.style.display = "none";
         }
 
         async function updateUI() {
             const balance = await contract.getBalance();
-            document.getElementById("balance").textContent = ethers.utils.formatEther(balance);
-
-            const lastClaim = await contract.lastClaim(account);
-            const cooldown = await contract.cooldownPeriod();
-            const currentTime = Math.floor(Date.now() / 1000);
-            if (currentTime >= Number(lastClaim) + Number(cooldown)) {
-                claimButton.disabled = false;
-            } else {
-                claimButton.disabled = true;
-                const timeLeft = Number(lastClaim) + Number(cooldown) - currentTime;
-                statusDiv.textContent = `Cooldown active. Wait ${formatTime(timeLeft)}.`;
+            const claimAmt = await contract.claimAmount();
+            available.textContent = ethers.utils.formatEther(balance) + " MON";
+            claimAmountEl.textContent = ethers.utils.formatEther(claimAmt) + " MON";
+            if (account) {
+                const last = await contract.lastClaim(account);
+                lastClaim.textContent = last > 0 ? new Date(last * 1000).toLocaleString() : "None";
             }
         }
 
-        async function claimTokens() {
-            const sponsors = await contract.getActiveSponsors();
-            const activeSponsors = sponsors.filter(s => s.donor !== "0x0000000000000000000000000000000000000000" && s.xProfile !== "");
-            if (activeSponsors.length > 0) {
-                activeSponsors.forEach(sponsor => window.open(sponsor.xProfile, "_blank"));
-                if (!confirm("Did you follow all sponsors on X?")) return;
+        async function checkClaimStatus() {
+            if (!account) {
+                claimButton.disabled = true;
+                claimButton.classList.remove("enabled");
+                status.textContent = "Connect your wallet to start.";
+                return;
             }
+            const last = await contract.lastClaim(account);
+            const cooldown = await contract.cooldownPeriod();
+            const paused = await contract.paused();
+            const now = Math.floor(Date.now() / 1000);
 
+            if (paused) {
+                claimButton.disabled = true;
+                claimButton.classList.remove("enabled");
+                status.textContent = "Claims are paused by the admin.";
+            } else if (now < last + cooldown) {
+                claimButton.disabled = true;
+                claimButton.classList.remove("enabled");
+                const timeLeft = last + cooldown - now;
+                status.textContent = `Cooldown active. Wait ${formatTime(timeLeft)}.`;
+                startCooldownCountdown(last, cooldown);
+            } else if (!tasksCompleted.followSponsors) {
+                claimButton.disabled = true;
+                claimButton.classList.remove("enabled");
+                status.textContent = "Follow all sponsors to claim tokens.";
+            } else {
+                claimButton.disabled = false;
+                claimButton.classList.add("enabled");
+                status.textContent = "Ready to claim!";
+            }
+        }
+
+        function startCooldownCountdown(last, cooldown) {
+            const endTime = last + cooldown;
+            const updateTimer = () => {
+                const now = Math.floor(Date.now() / 1000);
+                const remaining = endTime - now;
+                if (remaining > 0) {
+                    claimButton.textContent = `Next claim in ${formatTime(remaining)}`;
+                    setTimeout(updateTimer, 1000);
+                } else {
+                    claimButton.textContent = "Claim Tokens";
+                    checkClaimStatus();
+                }
+            };
+            updateTimer();
+        }
+
+        async function claimTokens() {
+            if (!tasksCompleted.connectWallet || !tasksCompleted.followSponsors) {
+                status.textContent = "Complete all tasks first!";
+                return;
+            }
             try {
-                const tx = await contract.claim();
-                statusDiv.textContent = "Claiming tokens...";
+                const tx = await contract.claim({ gasLimit: 100000 });
+                status.textContent = "Claiming tokens...";
                 await tx.wait();
-                statusDiv.textContent = "Tokens claimed successfully!";
+                status.textContent = "Tokens claimed successfully!";
+                tasksCompleted.followSponsors = false;
+                updateTaskButtons();
                 updateUI();
+                checkClaimStatus();
             } catch (error) {
-                statusDiv.textContent = `Error: ${error.message}`;
+                status.textContent = `Error: ${error.message}`;
             }
         }
 
         async function donate() {
             const amount = donateAmount.value;
             if (!amount || amount <= 0) {
-                statusDiv.textContent = "Please enter a valid amount!";
+                status.textContent = "Please enter a valid amount!";
                 return;
             }
-
             try {
                 const valueInWei = ethers.utils.parseEther(amount);
-                const tx = await contract.deposit({ value: valueInWei });
-                statusDiv.textContent = "Processing donation...";
+                const tx = await contract.deposit({ value: valueInWei, gasLimit: 100000 });
+                status.textContent = "Processing donation...";
                 const receipt = await tx.wait();
 
                 const sponsorLevels = ["Diamond", "Gold", "Silver", "Bronze", "Copper"];
@@ -235,14 +576,15 @@
 
                 if (sponsorIndex !== -1 && receipt.events.some(e => e.event === "NewSponsor")) {
                     sponsorLevelSpan.textContent = sponsorLevels[sponsorIndex];
-                    sponsorModal.style.display = "flex";
+                    sponsorModal.style.display = "block";
+                    modalOverlay.style.display = "block";
                 } else {
-                    statusDiv.textContent = "Thank you for supporting MonFaucet!";
+                    status.textContent = "Thank you for supporting MonFaucet!";
                 }
                 updateUI();
                 loadSponsors();
             } catch (error) {
-                statusDiv.textContent = `Error: ${error.message}`;
+                status.textContent = `Error: ${error.message}`;
             }
         }
 
@@ -252,7 +594,6 @@
                 modalStatus.textContent = "Please enter a valid X profile URL!";
                 return;
             }
-
             try {
                 const sponsors = await contract.getActiveSponsors();
                 const position = sponsors.findIndex(s => s.donor.toLowerCase() === account.toLowerCase() && s.xProfile === "");
@@ -260,12 +601,11 @@
                     modalStatus.textContent = "No sponsor slot found!";
                     return;
                 }
-
-                const tx = await contract.addSponsor(position, xProfile);
+                const tx = await contract.addSponsor(position, xProfile, { gasLimit: 100000 });
                 modalStatus.textContent = "Submitting profile...";
                 await tx.wait();
                 modalStatus.textContent = "Profile added successfully!";
-                sponsorModal.style.display = "none";
+                closeModal();
                 loadSponsors();
             } catch (error) {
                 modalStatus.textContent = `Error: ${error.message}`;
@@ -274,15 +614,16 @@
 
         async function loadSponsors() {
             const sponsors = await contract.getActiveSponsors();
-            const sponsorLevels = ["sponsor-diamond", "sponsor-gold", "sponsor-silver", "sponsor-bronze", "sponsor-copper"];
+            const sponsorClasses = ["sponsor-diamond", "sponsor-gold", "sponsor-silver", "sponsor-bronze", "sponsor-copper"];
             sponsorsList.innerHTML = "";
 
-            sponsors.forEach((sponsor, index) => {
+            for (let i = 0; i < 5; i++) {
+                const sponsor = sponsors[i];
                 if (sponsor.donor === "0x0000000000000000000000000000000000000000") {
-                    const amount = ethers.utils.formatEther(contract.sponsorAmounts(index));
-                    const duration = contract.sponsorDurations(index) / 86400; // Dias
+                    const amount = ethers.utils.formatEther(await contract.sponsorAmounts(i));
+                    const duration = (await contract.sponsorDurations(i)) / 86400; // Dias
                     sponsorsList.innerHTML += `
-                        <div class="sponsor-container">
+                        <div class="sponsor-item">
                             <p>Sponsor this spot: ${amount} MON for ${duration} day${duration > 1 ? "s" : ""}</p>
                             <button onclick="document.getElementById('donateAmount').value = ${amount}; donate();">Donate Now</button>
                         </div>`;
@@ -290,13 +631,13 @@
                     const timeLeft = Math.max(0, Number(sponsor.startTime) + Number(sponsor.duration) - Math.floor(Date.now() / 1000));
                     const username = sponsor.xProfile.split("https://x.com/")[1] || "Unknown";
                     sponsorsList.innerHTML += `
-                        <div class="sponsor-container ${sponsorLevels[index]}">
+                        <div class="sponsor-item ${sponsorClasses[i]}">
                             <p>@${username} <button onclick="window.open('${sponsor.xProfile}', '_blank')">Follow</button></p>
-                            <p>Time left: <span id="timer-${index}">${formatTime(timeLeft)}</span></p>
+                            <p>Time left: <span id="timer-${i}">${formatTime(timeLeft)}</span></p>
                         </div>`;
-                    if (timeLeft > 0) startTimer(index, timeLeft);
+                    if (timeLeft > 0) startTimer(i, timeLeft);
                 }
-            });
+            }
         }
 
         function startTimer(index, timeLeft) {
@@ -321,13 +662,71 @@
             return `${days}d ${hours}h ${mins}m ${secs}s`;
         }
 
-        // Atualiza UI e patrocinadores periodicamente
-        setInterval(() => {
-            if (contract) {
-                updateUI();
-                loadSponsors();
+        function disconnect() {
+            provider = null;
+            signer = null;
+            contract = null;
+            account = null;
+            tasksCompleted = { connectWallet: false, followSponsors: false };
+            walletInfo.style.display = "none";
+            updateTaskButtons();
+            checkClaimStatus();
+            status.textContent = "Wallet disconnected.";
+        }
+
+        window.addEventListener("load", () => {
+            provider = new ethers.providers.JsonRpcProvider(MONAD_TESTNET.rpcUrls[0]);
+            contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, provider);
+            updateUI();
+            loadSponsors();
+            checkClaimStatus();
+        });
+
+        // Animação de partículas
+        const canvas = document.querySelector("canvas");
+        const ctx = canvas.getContext("2d");
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2 + 0.5;
+                this.speedX = Math.random() * 0.3 - 0.15;
+                this.speedY = Math.random() * 0.3 - 0.15;
+                this.color = `rgba(${Math.random() * 100 + 155}, ${Math.random() * 100 + 155}, 255, 0.1)`;
             }
-        }, 60000); // Atualiza a cada 1 minuto
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
+                if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
+            }
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+            }
+        }
+
+        const particles = [];
+        for (let i = 0; i < 30; i++) particles.push(new Particle());
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            requestAnimationFrame(animate);
+        }
+        window.addEventListener("resize", () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+        animate();
     </script>
 </body>
 </html>
