@@ -4,698 +4,330 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MonFaucet</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
     <style>
-        :root {
-            --background-start: #000000;
-            --background-end: #0F1419;
-            --primary-color: #007AFF;
-            --secondary-color: #00D4FF;
-            --accent-color: #FF6F00;
-            --text-color: #FFFFFF;
-            --box-background: linear-gradient(to bottom, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.07));
-            --box-border: rgba(255, 255, 255, 0.1);
-            --shadow-color: rgba(0, 0, 0, 0.3);
-            --button-hover: #00D4FF;
-            --disabled-opacity: 0.5;
-            --font-family: 'Poppins', 'Montserrat', Arial, sans-serif;
-        }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: var(--font-family);
-            background: linear-gradient(to bottom, var(--background-start), var(--background-end));
-            color: var(--text-color);
-            min-height: 100vh;
-            text-align: center;
-            overflow-x: hidden;
-            position: relative;
-        }
-        .main-content {
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
             padding: 20px;
-            position: relative;
-            z-index: 1;
-        }
-        canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; }
-        .wallet-info {
-            display: none;
-            width: 100%;
-            max-width: 24rem;
-            margin-bottom: 0.5rem;
-            padding: 0.8rem 1.5rem;
-            background: var(--box-background);
-            border-radius: 1rem;
-            border: 1px solid var(--box-border);
-            box-shadow: 0 4px 12px var(--shadow-color);
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.9rem;
-            position: absolute;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-        }
-        .wallet-info button {
-            background: var(--primary-color);
-            color: var(--text-color);
-            padding: 0.4rem 0.8rem;
-            border-radius: 0.7rem;
-            border: 1px solid var(--box-border);
-            cursor: pointer;
-            transition: all 0.4s ease-in-out;
-        }
-        .wallet-info button:hover { background: var(--button-hover); }
-        .faucet-container {
-            width: 100%;
-            max-width: 24rem;
-            padding: 2rem;
-            background: var(--box-background);
-            backdrop-filter: blur(20px);
-            border-radius: 1rem;
-            border: 1px solid var(--box-border);
-            box-shadow: 0 8px 16px var(--shadow-color);
-            min-height: 450px;
-            position: relative;
-        }
-        .faucet-title {
-            font-size: 2.8rem;
-            font-weight: bold;
-            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            margin-bottom: 1.5rem;
-        }
-        .faucet-description {
-            font-size: 1rem;
-            margin: 1.5rem 0;
-            opacity: 0.9;
-        }
-        .info-box {
-            background: var(--box-background);
-            border-radius: 0.75rem;
-            padding: 1rem;
-            margin-bottom: 1.2rem;
-        }
-        .info-box div { display: flex; justify-content: space-between; margin-bottom: 0.5rem; }
-        .task-button, .claim-button {
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1rem;
-            margin-bottom: 0.6rem;
-            background: var(--box-background);
-            border-radius: 0.75rem;
-            color: var(--text-color);
-            border: 1px solid var(--box-border);
-            box-shadow: 0 3px 10px var(--shadow-color);
-            font-weight: bold;
-            transition: all 0.4s ease-in-out;
-            cursor: pointer;
-        }
-        .task-button:hover, .claim-button:hover {
-            transform: scale(1.05);
-            background: rgba(255, 255, 255, 0.08);
-        }
-        .claim-button {
-            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
-            opacity: var(--disabled-opacity);
-            cursor: not-allowed;
             justify-content: center;
-            position: relative;
+            align-items: flex-start;
+            min-height: 100vh;
         }
-        .claim-button.enabled { opacity: 1; cursor: pointer; }
-        .claim-button .spinner {
-            display: none;
-            position: absolute;
-            left: 10px;
-            width: 20px;
-            height: 20px;
-            border: 3px solid var(--text-color);
-            border-top: 3px solid var(--primary-color);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
+        .container {
+            display: flex;
+            width: 100%;
+            max-width: 1200px;
+            gap: 20px;
         }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .claim-button.loading .spinner { display: inline-block; }
-        .claim-button.loading span { margin-left: 25px; }
-        .status { font-size: 0.9rem; margin-top: 1rem; opacity: 0.8; }
+        .main-container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 50%;
+            text-align: center;
+        }
+        .side-container {
+            width: 25%;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .sponsor-container {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .sponsor-diamond { border: 2px solid #00b7ff; background-color: #e6f7ff; }
+        .sponsor-gold { border: 2px solid #ffd700; background-color: #fffacd; }
+        .sponsor-silver { border: 2px solid #c0c0c0; background-color: #f0f0f0; }
+        .sponsor-bronze { border: 2px solid #cd7f32; background-color: #ffebcd; }
+        .sponsor-copper { border: 2px solid #b87333; background-color: #ffe4e1; }
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover { background-color: #0056b3; }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
+        input { padding: 5px; margin: 5px 0; width: 80%; }
+        #status { margin-top: 10px; color: #555; }
         .modal {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: var(--box-background);
-            padding: 1.5rem;
-            border-radius: 1rem;
-            border: 1px solid var(--box-border);
-            box-shadow: 0 10px 20px var(--shadow-color);
-            z-index: 30;
-        }
-        .modal-buttons {
-            margin-top: 1rem;
-            display: flex;
-            gap: 0.8rem;
-            justify-content: center;
-        }
-        .modal-button {
-            background: var(--primary-color);
-            color: var(--text-color);
-            padding: 0.5rem 1rem;
-            border-radius: 0.7rem;
-            cursor: pointer;
-            transition: all 0.4s ease-in-out;
-        }
-        .modal-button:hover { background: var(--button-hover); }
-        #modal-overlay {
             display: none;
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 20;
-            backdrop-filter: blur(5px);
-        }
-        .decorative-blur {
-            position: absolute;
-            border-radius: 50%;
-            filter: blur(2.5rem);
-            pointer-events: none;
-            animation: pulse 4s infinite ease-in-out;
-        }
-        @keyframes pulse {
-            0% { opacity: 0.2; } 50% { opacity: 0.4; } 100% { opacity: 0.2; }
-        }
-        .blur-1 { top: 25%; left: 25%; width: 14rem; height: 14rem; background: rgba(0, 122, 255, 0.2); }
-        .blur-2 { bottom: 33%; right: 33%; width: 20rem; height: 20rem; background: rgba(0, 212, 255, 0.1); }
-        footer {
-            position: fixed;
-            bottom: 10px;
-            width: 100%;
-            text-align: center;
-            font-size: 0.9rem;
-            color: var(--text-color);
-            opacity: 0.7;
-        }
-        footer a {
-            color: var(--primary-color);
-            text-decoration: none;
-            margin: 0 0.5rem;
-        }
-        footer a:hover { color: var(--secondary-color); }
-        .donate-container {
-            display: none; /* Desabilitado temporariamente */
-            width: 100%;
-            max-width: 24rem;
-            margin-top: 1rem;
-            padding: 1rem;
-            background: var(--box-background);
-            border-radius: 1rem;
-            border: 1px solid var(--box-border);
-            box-shadow: 0 4px 12px var(--shadow-color);
-            text-align: center;
-            font-size: 0.9rem;
-        }
-        .donate-container button {
-            background: var(--accent-color);
-            color: var(--text-color);
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
-            border: none;
-            cursor: pointer;
-            animation: pulseButton 1.5s infinite;
-        }
-        @keyframes pulseButton {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-        .ad-container {
-            position: absolute;
-            width: 300px;
-            height: 600px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--box-border);
-            border-radius: 0.5rem;
-            display: flex;
-            align-items: center;
+            background-color: rgba(0, 0, 0, 0.5);
             justify-content: center;
-            font-size: 1rem;
-            color: var(--text-color);
-            opacity: 0.8;
+            align-items: center;
         }
-        .ad-left { left: calc(50% - 650px); top: 50%; transform: translateY(-50%); }
-        .ad-right { right: calc(50% - 650px); top: 50%; transform: translateY(-50%); }
-        @media (max-width: 1400px) { .ad-container { display: none; } }
-        @media (max-width: 768px) {
-            .faucet-container { max-width: 90%; padding: 1.5rem; min-height: 400px; }
-            .faucet-title { font-size: 2rem; }
-            .task-button, .claim-button { padding: 0.8rem; }
-            .wallet-info { max-width: 90%; top: 10px; }
+        .modal-content {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            width: 300px;
+            text-align: center;
         }
     </style>
 </head>
 <body>
-    <div class="main-content">
-        <canvas></canvas>
-        <div class="ad-container ad-left">Espaço de Anúncio (300x600)</div>
-        <div class="wallet-info" id="walletInfo">
-            <span id="walletAddress"></span>
-            <button id="disconnectWallet">Desconectar</button>
+    <div class="container">
+        <div class="side-container" id="sponsors-container">
+            <h2>Sponsors</h2>
+            <div id="sponsors-list"></div>
         </div>
-        <div class="faucet-container">
-            <div class="faucet-title">MonFaucet</div>
-            <p class="faucet-description">Reivindique tokens MON na Monad Testnet</p>
-            <div class="task-buttons" id="taskButtons">
-                <button class="task-button" id="connectWalletButton">
-                    <div class="flex items-center gap-3">
-                        <i class="fas fa-wallet icon"></i>
-                        <span>Conectar Carteira</span>
-                    </div>
-                    <i class="fas fa-arrow-right arrow"></i>
-                </button>
-                <button class="task-button" data-task="followX" disabled>
-                    <div class="flex items-center gap-3">
-                        <i class="fab fa-twitter icon"></i>
-                        <span>Seguir no X</span>
-                    </div>
-                    <i class="fas fa-arrow-right arrow"></i>
-                </button>
-                <button class="task-button" data-task="likePost" disabled>
-                    <div class="flex items-center gap-3">
-                        <i class="fas fa-thumbs-up icon"></i>
-                        <span>Curtir Postagem no X</span>
-                    </div>
-                    <i class="fas fa-arrow-right arrow"></i>
-                </button>
+        <div class="main-container">
+            <h1>MonFaucet</h1>
+            <button id="connectButton">Connect Wallet</button>
+            <div id="faucet-container" style="display: none;">
+                <p>Balance: <span id="balance">0</span> MON</p>
+                <button id="claimButton" disabled>Claim Tokens</button>
             </div>
-            <div class="info-box" id="infoBox">
-                <div><span>Disponível</span><span id="available">0.00 MON</span></div>
-                <div><span>Valor da Reivindicação</span><span id="claimAmount">0.01 MON</span></div>
-                <div><span>Rede</span><span>Monad Testnet</span></div>
-                <div><span>Última Reivindicação</span><span id="lastClaim">Nenhum</span></div>
+            <div class="donate-container">
+                <h3>Donate</h3>
+                <input type="number" id="donateAmount" placeholder="Enter amount in MON (e.g., 100)" step="0.01">
+                <button id="donateButton">Donate</button>
             </div>
-            <button class="claim-button" id="claimButton" disabled>
-                <div class="spinner"></div>
-                <span>Reivindicar Tokens</span>
-            </button>
-            <div class="status" id="status"></div>
+            <div id="status"></div>
+            <div id="sponsorModal" class="modal">
+                <div class="modal-content">
+                    <h3>Congratulations!</h3>
+                    <p>You are a <span id="sponsorLevel"></span> Sponsor!</p>
+                    <input type="text" id="xProfileInput" placeholder="Enter your X profile URL">
+                    <button id="submitXProfile">Submit</button>
+                    <p id="modalStatus"></p>
+                </div>
+            </div>
         </div>
-        <div class="donate-container">
-            Ajude os Nads, doe para a faucet: 
-            <button id="copyContractBtn">Copiar Endereço do Contrato</button>
-        </div>
-        <div class="ad-container ad-right">Espaço de Anúncio (300x600)</div>
-        <div class="decorative-blur blur-1"></div>
-        <div class="decorative-blur blur-2"></div>
-    </div>
-    <div id="modal-overlay"></div>
-    <div id="confirmation-modal" class="modal">
-        <div class="modal-content">Você completou a tarefa?</div>
-        <div class="modal-buttons">
-            <button class="modal-button" id="confirm-yes">Sim</button>
-            <button class="modal-button" id="confirm-no">Não</button>
+        <div class="side-container" id="ad-container">
+            <h2>Ad Space</h2>
+            <p>Your ad could be here!</p>
         </div>
     </div>
-    <footer>
-        <a href="#">Sobre</a> | <a href="#">Contato</a> | <a href="#">Termos</a>
-    </footer>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
-    <script>
-        if (typeof ethers === 'undefined') {
-            document.getElementById('status').textContent = 'Erro: ethers.js não carregou. Por favor, recarregue a página.';
-            throw new Error('ethers.js não carregado');
-        }
 
-        const CONTRACT_ADDRESS = '0x6c31b2a0CA297Eb3ea020826881c812b403b3CE5';
-        const ABI = [
+    <script src="https://cdn.ethers.io/lib/ethers-5.7.2.umd.min.js"></script>
+    <script>
+        const contractAddress = "0xF3D72b267890b0854ad126A26F39Cf221491D35A";
+        const contractABI = [
+            // ABI gerado a partir do contrato
             {"inputs":[],"stateMutability":"nonpayable","type":"constructor"},
             {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"Claimed","type":"event"},
             {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"sender","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"Deposited","type":"event"},
-            {"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"newAmount","type":"uint256"}],"name":"ClaimAmountUpdated","type":"event"},
-            {"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"newCooldown","type":"uint256"}],"name":"CooldownUpdated","type":"event"},
-            {"anonymous":false,"inputs":[{"indexed":false,"internalType":"bool","name":"isPaused","type":"bool"}],"name":"Paused","type":"event"},
+            {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"donor","type":"address"},{"indexed":false,"internalType":"string","name":"xProfile","type":"string"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"duration","type":"uint256"}],"name":"NewSponsor","type":"event"},
             {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"Withdrawn","type":"event"},
+            {"inputs":[{"internalType":"uint256","name":"position","type":"uint256"},{"internalType":"string","name":"xProfile","type":"string"}],"name":"addSponsor","outputs":[],"stateMutability":"nonpayable","type":"function"},
             {"inputs":[],"name":"claim","outputs":[],"stateMutability":"nonpayable","type":"function"},
             {"inputs":[],"name":"claimAmount","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
             {"inputs":[],"name":"cooldownPeriod","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
             {"inputs":[],"name":"deposit","outputs":[],"stateMutability":"payable","type":"function"},
+            {"inputs":[],"name":"getActiveSponsors","outputs":[{"components":[{"internalType":"address","name":"donor","type":"address"},{"internalType":"string","name":"xProfile","type":"string"},{"internalType":"uint256","name":"amount","type":"uint256"},{"internalType":"uint256","name":"startTime","type":"uint256"},{"internalType":"uint256","name":"duration","type":"uint256"}],"internalType":"struct MonFaucet.Sponsor[5]","name":"","type":"tuple[5]"}],"stateMutability":"view","type":"function"},
             {"inputs":[],"name":"getBalance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+            {"inputs":[{"internalType":"uint256","name":"position","type":"uint256"}],"name":"isSponsorSlotAvailable","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},
             {"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"lastClaim","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
             {"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
             {"inputs":[],"name":"paused","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},
             {"inputs":[{"internalType":"uint256","name":"newAmount","type":"uint256"}],"name":"setClaimAmount","outputs":[],"stateMutability":"nonpayable","type":"function"},
             {"inputs":[{"internalType":"uint256","name":"newCooldown","type":"uint256"}],"name":"setCooldownPeriod","outputs":[],"stateMutability":"nonpayable","type":"function"},
             {"inputs":[{"internalType":"bool","name":"_paused","type":"bool"}],"name":"setPaused","outputs":[],"stateMutability":"nonpayable","type":"function"},
+            {"inputs":[{"internalType":"uint256","name":"","type":"uint256"}],"name":"sponsorAmounts","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+            {"inputs":[{"internalType":"uint256","name":"","type":"uint256"}],"name":"sponsorDurations","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+            {"inputs":[{"internalType":"uint256","name":"","type":"uint256"}],"name":"sponsors","outputs":[{"internalType":"address","name":"donor","type":"address"},{"internalType":"string","name":"xProfile","type":"string"},{"internalType":"uint256","name":"amount","type":"uint256"},{"internalType":"uint256","name":"startTime","type":"uint256"},{"internalType":"uint256","name":"duration","type":"uint256"}],"stateMutability":"view","type":"function"},
             {"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"withdraw","outputs":[],"stateMutability":"nonpayable","type":"function"},
             {"stateMutability":"payable","type":"receive"}
         ];
-        const socialLinks = {
-            "followX": "https://x.com/_roneslira?follow=true",
-            "likePost": "https://x.com/_roneslira/status/123456789"
-        };
-        const MONAD_TESTNET = {
-            chainId: '0x279F', // 10143 em hexadecimal (corrigido)
-            chainName: 'Monad Testnet',
-            rpcUrls: ['https://testnet-rpc.monad.xyz/'],
-            nativeCurrency: { name: 'MON', symbol: 'MON', decimals: 18 },
-            blockExplorerUrls: ['https://testnet.monadexplorer.com/']
-        };
 
-        let walletConnected = localStorage.getItem('walletConnected') === 'true';
-        let tasksCompleted = { connectWallet: false, followX: false, likePost: false };
-        const taskButtons = document.querySelectorAll('.task-button');
-        const claimButton = document.getElementById('claimButton');
-        const claimButtonText = claimButton.querySelector('span');
-        const status = document.getElementById('status');
-        const connectWalletButton = document.getElementById('connectWalletButton');
-        const modal = document.getElementById('confirmation-modal');
-        const modalOverlay = document.getElementById('modal-overlay');
-        const walletInfo = document.getElementById('walletInfo');
-        const walletAddress = document.getElementById('walletAddress');
-        const disconnectWallet = document.getElementById('disconnectWallet');
-        const available = document.getElementById('available');
-        const claimAmount = document.getElementById('claimAmount');
-        const lastClaim = document.getElementById('lastClaim');
+        let provider, signer, contract, account;
 
-        function updateTaskButtons() {
-            taskButtons.forEach(button => {
-                const task = button.getAttribute('data-task');
-                if (task) {
-                    button.disabled = !walletConnected || tasksCompleted[task];
-                    button.style.opacity = tasksCompleted[task] ? '0.5' : '1';
-                }
-            });
-            connectWalletButton.disabled = walletConnected;
-            connectWalletButton.style.opacity = walletConnected ? '0.5' : '1';
-        }
+        const connectButton = document.getElementById("connectButton");
+        const claimButton = document.getElementById("claimButton");
+        const donateButton = document.getElementById("donateButton");
+        const donateAmount = document.getElementById("donateAmount");
+        const statusDiv = document.getElementById("status");
+        const sponsorsList = document.getElementById("sponsorsList");
+        const sponsorModal = document.getElementById("sponsorModal");
+        const sponsorLevelSpan = document.getElementById("sponsorLevel");
+        const xProfileInput = document.getElementById("xProfileInput");
+        const submitXProfile = document.getElementById("submitXProfile");
+        const modalStatus = document.getElementById("modalStatus");
+
+        connectButton.addEventListener("click", connectWallet);
+        claimButton.addEventListener("click", claimTokens);
+        donateButton.addEventListener("click", donate);
+        submitXProfile.addEventListener("click", submitSponsorProfile);
 
         async function connectWallet() {
-            if (!window.ethereum) {
-                alert('Por favor, instale o MetaMask ou uma carteira compatível com EVM.');
-                return;
-            }
-            try {
-                const provider = new ethers.providers.Web3Provider(window.ethereum);
-                const accounts = await provider.send("eth_requestAccounts", []);
-                const network = await provider.getNetwork();
-                if (network.chainId !== 10143) {
-                    try {
-                        await window.ethereum.request({
-                            method: 'wallet_switchEthereumChain',
-                            params: [{ chainId: '0x279F' }], // Corrigido para 10143
-                        });
-                    } catch (switchError) {
-                        if (switchError.code === 4902 || switchError.code === -32603) {
-                            await window.ethereum.request({
-                                method: 'wallet_addEthereumChain',
-                                params: [MONAD_TESTNET],
-                            });
-                            await window.ethereum.request({
-                                method: 'wallet_switchEthereumChain',
-                                params: [{ chainId: '0x279F' }], // Corrigido para 10143
-                            });
-                        } else {
-                            throw new Error('Falha ao mudar para Monad Testnet. Por favor, mude manualmente para Monad Testnet (Chain ID: 10143).');
-                        }
-                    }
-                }
-                walletConnected = true;
-                localStorage.setItem('walletConnected', 'true');
-                const signer = provider.getSigner();
-                const address = await signer.getAddress();
-                walletAddress.textContent = `${address.slice(0, 6)}...${address.slice(-4)}`;
-                walletInfo.style.display = 'flex';
-                tasksCompleted.connectWallet = true;
-                updateTaskButtons();
-                await updateContractInfo();
-                checkClaimStatus();
-                status.textContent = 'Carteira conectada! Complete as tarefas para reivindicar.';
-            } catch (error) {
-                console.error('Erro na conexão da carteira:', error);
-                status.textContent = 'Falha ao conectar a carteira: ' + (error.message || 'Erro desconhecido');
+            if (window.ethereum) {
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+                await provider.send("eth_requestAccounts", []);
+                signer = provider.getSigner();
+                account = await signer.getAddress();
+                contract = new ethers.Contract(contractAddress, contractABI, signer);
+
+                connectButton.style.display = "none";
+                document.getElementById("faucet-container").style.display = "block";
+                updateUI();
+                loadSponsors();
+            } else {
+                statusDiv.textContent = "Please install MetaMask!";
             }
         }
 
-        connectWalletButton.addEventListener('click', connectWallet);
+        async function updateUI() {
+            const balance = await contract.getBalance();
+            document.getElementById("balance").textContent = ethers.utils.formatEther(balance);
 
-        disconnectWallet.addEventListener('click', () => {
-            walletConnected = false;
-            localStorage.setItem('walletConnected', 'false');
-            walletInfo.style.display = 'none';
-            tasksCompleted = { connectWallet: false, followX: false, likePost: false };
-            updateTaskButtons();
-            claimButton.disabled = true;
-            claimButton.classList.remove('enabled');
-            claimButtonText.textContent = 'Reivindicar Tokens';
-            status.textContent = 'Conecte sua carteira para começar.';
-            lastClaim.textContent = 'Nenhum';
-        });
-
-        taskButtons.forEach(button => {
-            const task = button.getAttribute('data-task');
-            if (task) {
-                button.addEventListener('click', () => {
-                    if (!walletConnected) {
-                        alert('Conecte sua carteira primeiro.');
-                        return;
-                    }
-                    if (tasksCompleted[task]) return;
-                    const link = socialLinks[task];
-                    window.open(link, '_blank');
-                    modal.style.display = 'block';
-                    modalOverlay.style.display = 'block';
-                    document.getElementById('confirm-yes').onclick = () => {
-                        tasksCompleted[task] = true;
-                        updateTaskButtons();
-                        checkClaimStatus();
-                        modal.style.display = 'none';
-                        modalOverlay.style.display = 'none';
-                    };
-                    document.getElementById('confirm-no').onclick = () => {
-                        modal.style.display = 'none';
-                        modalOverlay.style.display = 'none';
-                    };
-                });
-            }
-        });
-
-        async function updateContractInfo() {
-            try {
-                const provider = window.ethereum && walletConnected ?
-                    new ethers.providers.Web3Provider(window.ethereum) :
-                    new ethers.providers.JsonRpcProvider(MONAD_TESTNET.rpcUrls[0]);
-                const contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, provider);
-                const balance = await contract.getBalance();
-                const claimAmt = ethers.utils.formatEther(await contract.claimAmount());
-                const cooldown = (await contract.cooldownPeriod()).toString();
-                localStorage.setItem('claimAmount', claimAmt);
-                localStorage.setItem('cooldownPeriod', cooldown);
-                available.textContent = ethers.utils.formatEther(balance) + ' MON';
-                claimAmount.textContent = claimAmt + ' MON';
-            } catch (error) {
-                console.error('Erro ao buscar informações do contrato:', error);
-                available.textContent = 'Erro';
-                claimAmount.textContent = '0.01 MON';
-            }
-        }
-
-        async function checkClaimStatus() {
-            if (!walletConnected) {
+            const lastClaim = await contract.lastClaim(account);
+            const cooldown = await contract.cooldownPeriod();
+            const currentTime = Math.floor(Date.now() / 1000);
+            if (currentTime >= Number(lastClaim) + Number(cooldown)) {
+                claimButton.disabled = false;
+            } else {
                 claimButton.disabled = true;
-                claimButton.classList.remove('enabled');
-                claimButtonText.textContent = 'Reivindicar Tokens';
-                status.textContent = 'Conecte sua carteira para começar.';
-                return;
+                const timeLeft = Number(lastClaim) + Number(cooldown) - currentTime;
+                statusDiv.textContent = `Cooldown active. Wait ${formatTime(timeLeft)}.`;
             }
-            try {
-                const provider = new ethers.providers.Web3Provider(window.ethereum);
-                const signer = provider.getSigner();
-                const contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
-                const address = await signer.getAddress();
-                const lastClaimTime = await contract.lastClaim(address);
-                const cooldown = parseInt(await contract.cooldownPeriod());
-                const paused = await contract.paused();
-                const now = Math.floor(Date.now() / 1000);
-
-                if (lastClaimTime.toNumber() > 0) {
-                    lastClaim.textContent = new Date(lastClaimTime.toNumber() * 1000).toLocaleString();
-                }
-
-                if (paused) {
-                    claimButton.disabled = true;
-                    claimButton.classList.remove('enabled');
-                    claimButtonText.textContent = 'Reivindicar Tokens';
-                    status.textContent = 'Reivindicações pausadas pelo administrador.';
-                } else if (now < lastClaimTime.toNumber() + cooldown) {
-                    startCooldownCountdown(lastClaimTime, cooldown);
-                    claimButton.disabled = true;
-                    claimButton.classList.remove('enabled');
-                    status.textContent = `Cooldown ativo. Aguarde até ${new Date((lastClaimTime.toNumber() + cooldown) * 1000).toLocaleString()} para reivindicar novamente.`;
-                } else if (!tasksCompleted.followX || !tasksCompleted.likePost) {
-                    claimButtonText.textContent = 'Reivindicar Tokens';
-                    claimButton.disabled = true;
-                    claimButton.classList.remove('enabled');
-                    status.textContent = 'Complete todas as tarefas para reivindicar tokens.';
-                } else {
-                    const claimAmt = ethers.utils.formatEther(await contract.claimAmount());
-                    claimButtonText.textContent = `Reivindicar ${claimAmt} MON`;
-                    claimButton.disabled = false;
-                    claimButton.classList.add('enabled');
-                    status.textContent = 'Pronto para reivindicar!';
-                }
-            } catch (error) {
-                console.error('Erro ao verificar status de reivindicação:', error);
-                claimButtonText.textContent = 'Reivindicar Tokens';
-                claimButton.disabled = true;
-                claimButton.classList.remove('enabled');
-                status.textContent = 'Erro ao verificar o contrato. Tente novamente.';
-            }
-        }
-
-        function startCooldownCountdown(lastClaimTime, cooldown) {
-            const endTime = lastClaimTime.toNumber() + cooldown;
-            const updateTimer = () => {
-                const now = Math.floor(Date.now() / 1000);
-                const remaining = endTime - now;
-                if (remaining > 0) {
-                    const hours = Math.floor(remaining / 3600);
-                    const minutes = Math.floor((remaining % 3600) / 60);
-                    const seconds = remaining % 60;
-                    claimButtonText.textContent = `Próxima reivindicação em ${hours}h ${minutes}m ${seconds}s`;
-                    setTimeout(updateTimer, 1000);
-                } else {
-                    checkClaimStatus();
-                }
-            };
-            updateTimer();
         }
 
         async function claimTokens() {
-            if (!walletConnected || !tasksCompleted.followX || !tasksCompleted.likePost) {
-                alert('Conecte a carteira e complete todas as tarefas primeiro.');
+            const sponsors = await contract.getActiveSponsors();
+            const activeSponsors = sponsors.filter(s => s.donor !== "0x0000000000000000000000000000000000000000" && s.xProfile !== "");
+            if (activeSponsors.length > 0) {
+                activeSponsors.forEach(sponsor => window.open(sponsor.xProfile, "_blank"));
+                if (!confirm("Did you follow all sponsors on X?")) return;
+            }
+
+            try {
+                const tx = await contract.claim();
+                statusDiv.textContent = "Claiming tokens...";
+                await tx.wait();
+                statusDiv.textContent = "Tokens claimed successfully!";
+                updateUI();
+            } catch (error) {
+                statusDiv.textContent = `Error: ${error.message}`;
+            }
+        }
+
+        async function donate() {
+            const amount = donateAmount.value;
+            if (!amount || amount <= 0) {
+                statusDiv.textContent = "Please enter a valid amount!";
                 return;
             }
-            claimButton.classList.add('loading');
-            claimButtonText.textContent = 'Reivindicando...';
-            claimButton.disabled = true;
+
             try {
-                const provider = new ethers.providers.Web3Provider(window.ethereum);
-                const signer = provider.getSigner();
-                const contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
-                const tx = await contract.claim({ gasLimit: 100000 });
-                await tx.wait();
-                alert('Tokens reivindicados com sucesso!');
-                tasksCompleted.followX = false;
-                tasksCompleted.likePost = false;
-                updateTaskButtons();
-                await updateContractInfo();
-                checkClaimStatus();
-            } catch (error) {
-                console.error('Erro na reivindicação:', error);
-                if (error.reason && error.reason.includes('Periodo de cooldown nao expirou')) {
-                    status.textContent = 'Cooldown ativo. Por favor, aguarde 12 horas para a próxima reivindicação.';
+                const valueInWei = ethers.utils.parseEther(amount);
+                const tx = await contract.deposit({ value: valueInWei });
+                statusDiv.textContent = "Processing donation...";
+                const receipt = await tx.wait();
+
+                const sponsorLevels = ["Diamond", "Gold", "Silver", "Bronze", "Copper"];
+                const sponsorAmounts = ["1000", "700", "500", "200", "100"];
+                const donatedAmount = ethers.utils.formatEther(valueInWei);
+                const sponsorIndex = sponsorAmounts.indexOf(donatedAmount);
+
+                if (sponsorIndex !== -1 && receipt.events.some(e => e.event === "NewSponsor")) {
+                    sponsorLevelSpan.textContent = sponsorLevels[sponsorIndex];
+                    sponsorModal.style.display = "flex";
                 } else {
-                    alert('Falha ao reivindicar tokens: ' + (error.message || 'Erro desconhecido'));
-                    status.textContent = 'Erro durante a reivindicação. Tente novamente.';
+                    statusDiv.textContent = "Thank you for supporting MonFaucet!";
                 }
-                claimButtonText.textContent = 'Reivindicar Tokens';
-            } finally {
-                claimButton.classList.remove('loading');
-                claimButton.disabled = false;
-                checkClaimStatus();
+                updateUI();
+                loadSponsors();
+            } catch (error) {
+                statusDiv.textContent = `Error: ${error.message}`;
             }
         }
 
-        function copyContractAddress() {
-            navigator.clipboard.writeText(CONTRACT_ADDRESS).then(() => {
-                alert('Endereço do contrato copiado para a área de transferência: ' + CONTRACT_ADDRESS);
-            }).catch(err => {
-                console.error('Falha ao copiar o endereço do contrato:', err);
-                alert('Falha ao copiar o endereço do contrato. Tente novamente.');
+        async function submitSponsorProfile() {
+            const xProfile = xProfileInput.value;
+            if (!xProfile.startsWith("https://x.com/")) {
+                modalStatus.textContent = "Please enter a valid X profile URL!";
+                return;
+            }
+
+            try {
+                const sponsors = await contract.getActiveSponsors();
+                const position = sponsors.findIndex(s => s.donor.toLowerCase() === account.toLowerCase() && s.xProfile === "");
+                if (position === -1) {
+                    modalStatus.textContent = "No sponsor slot found!";
+                    return;
+                }
+
+                const tx = await contract.addSponsor(position, xProfile);
+                modalStatus.textContent = "Submitting profile...";
+                await tx.wait();
+                modalStatus.textContent = "Profile added successfully!";
+                sponsorModal.style.display = "none";
+                loadSponsors();
+            } catch (error) {
+                modalStatus.textContent = `Error: ${error.message}`;
+            }
+        }
+
+        async function loadSponsors() {
+            const sponsors = await contract.getActiveSponsors();
+            const sponsorLevels = ["sponsor-diamond", "sponsor-gold", "sponsor-silver", "sponsor-bronze", "sponsor-copper"];
+            sponsorsList.innerHTML = "";
+
+            sponsors.forEach((sponsor, index) => {
+                if (sponsor.donor === "0x0000000000000000000000000000000000000000") {
+                    const amount = ethers.utils.formatEther(contract.sponsorAmounts(index));
+                    const duration = contract.sponsorDurations(index) / 86400; // Dias
+                    sponsorsList.innerHTML += `
+                        <div class="sponsor-container">
+                            <p>Sponsor this spot: ${amount} MON for ${duration} day${duration > 1 ? "s" : ""}</p>
+                            <button onclick="document.getElementById('donateAmount').value = ${amount}; donate();">Donate Now</button>
+                        </div>`;
+                } else {
+                    const timeLeft = Math.max(0, Number(sponsor.startTime) + Number(sponsor.duration) - Math.floor(Date.now() / 1000));
+                    const username = sponsor.xProfile.split("https://x.com/")[1] || "Unknown";
+                    sponsorsList.innerHTML += `
+                        <div class="sponsor-container ${sponsorLevels[index]}">
+                            <p>@${username} <button onclick="window.open('${sponsor.xProfile}', '_blank')">Follow</button></p>
+                            <p>Time left: <span id="timer-${index}">${formatTime(timeLeft)}</span></p>
+                        </div>`;
+                    if (timeLeft > 0) startTimer(index, timeLeft);
+                }
             });
         }
 
-        claimButton.addEventListener('click', claimTokens);
-        document.getElementById('copyContractBtn').addEventListener('click', copyContractAddress);
-
-        window.addEventListener('load', () => {
-            updateContractInfo();
-            if (walletConnected && window.ethereum) {
-                const provider = new ethers.providers.Web3Provider(window.ethereum);
-                provider.listAccounts().then(accounts => {
-                    if (accounts.length > 0) {
-                        walletAddress.textContent = `${accounts[0].slice(0, 6)}...${accounts[0].slice(-4)}`;
-                        walletInfo.style.display = 'flex';
-                        tasksCompleted.connectWallet = true;
-                        updateTaskButtons();
-                        checkClaimStatus();
-                        status.textContent = 'Carteira conectada! Complete as tarefas para reivindicar.';
-                    } else {
-                        walletConnected = false;
-                        localStorage.setItem('walletConnected', 'false');
-                        checkClaimStatus();
-                    }
-                });
-            } else {
-                checkClaimStatus();
-            }
-        });
-
-        // Animação de partículas no canvas
-        const canvas = document.querySelector('canvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-
-        class Particle {
-            constructor() {
-                this.x = Math.random() * canvas.width;
-                this.y = Math.random() * canvas.height;
-                this.size = Math.random() * 2 + 0.5;
-                this.speedX = Math.random() * 0.3 - 0.15;
-                this.speedY = Math.random() * 0.3 - 0.15;
-                this.color = `rgba(${Math.random() * 100 + 155}, ${Math.random() * 100 + 155}, 255, 0.1)`;
-            }
-            update() {
-                this.x += this.speedX;
-                this.y += this.speedY;
-                if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
-                if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
-            }
-            draw() {
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fillStyle = this.color;
-                ctx.fill();
-            }
+        function startTimer(index, timeLeft) {
+            const timerSpan = document.getElementById(`timer-${index}`);
+            let remaining = timeLeft;
+            const interval = setInterval(() => {
+                if (remaining <= 0) {
+                    clearInterval(interval);
+                    loadSponsors();
+                } else {
+                    remaining--;
+                    timerSpan.textContent = formatTime(remaining);
+                }
+            }, 1000);
         }
 
-        const particles = [];
-        for (let i = 0; i < 30; i++) particles.push(new Particle());
-
-        function animate() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            particles.forEach(p => {
-                p.update();
-                p.draw();
-            });
-            requestAnimationFrame(animate);
+        function formatTime(seconds) {
+            const days = Math.floor(seconds / 86400);
+            const hours = Math.floor((seconds % 86400) / 3600);
+            const mins = Math.floor((seconds % 3600) / 60);
+            const secs = seconds % 60;
+            return `${days}d ${hours}h ${mins}m ${secs}s`;
         }
-        window.addEventListener('resize', () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        });
-        animate();
+
+        // Atualiza UI e patrocinadores periodicamente
+        setInterval(() => {
+            if (contract) {
+                updateUI();
+                loadSponsors();
+            }
+        }, 60000); // Atualiza a cada 1 minuto
     </script>
 </body>
 </html>
