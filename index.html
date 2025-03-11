@@ -235,21 +235,23 @@
         }
         .ad-container, .sponsors-container {
             position: absolute;
-            width: 24rem;
+            width: 100%;
+            max-width: 24rem;
             min-height: 450px;
             background: var(--box-background);
             border: 1px solid var(--box-border);
             border-radius: 1rem;
             padding: 1rem;
             text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
         }
         .sponsors-container {
             left: calc(50% - 650px);
             top: 50%;
             transform: translateY(-50%);
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
         }
         .ad-container {
             right: calc(50% - 650px);
@@ -257,7 +259,9 @@
             transform: translateY(-50%);
         }
         .sponsor-item {
+            width: 100%;
             padding: 0.8rem;
+            margin-bottom: 0.5rem;
             border-radius: 0.5rem;
             background: rgba(255, 255, 255, 0.05);
             text-align: left;
@@ -361,7 +365,6 @@
     <footer>
         <a href="#">About</a> | <a href="#">Contact</a> | <a href="#">Terms</a>
     </footer>
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
     <script>
         const CONTRACT_ADDRESS = "0xF3D72b267890b0854ad126A26F39Cf221491D35A";
@@ -610,7 +613,7 @@
                 return;
             }
             try {
-                const tx = await contract.claim({ gasLimit: 100000 });
+                const tx = await contract.claim({ gasLimit: 150000 });
                 status.textContent = "Claiming tokens...";
                 await tx.wait();
                 status.textContent = "Tokens claimed successfully!";
@@ -639,8 +642,22 @@
                     status.textContent = "Donations are paused by the admin.";
                     return;
                 }
+
+                // Verifica se há slots disponíveis
+                let slotAvailable = false;
+                for (let i = 0; i < 5; i++) {
+                    if (await contract.isSponsorSlotAvailable(i)) {
+                        slotAvailable = true;
+                        break;
+                    }
+                }
+                if (!slotAvailable) {
+                    status.textContent = "All sponsor slots are full!";
+                    return;
+                }
+
                 const valueInWei = ethers.utils.parseEther(amount);
-                const tx = await contract.deposit({ value: valueInWei, gasLimit: 100000 });
+                const tx = await contract.deposit({ value: valueInWei, gasLimit: 150000 });
                 status.textContent = "Processing donation...";
                 const receipt = await tx.wait();
 
@@ -672,12 +689,12 @@
             }
             try {
                 const sponsors = await contract.getActiveSponsors();
-                const position = sponsors.findIndex(s => s.donor.toLowerCase() === account.toLowerCase() && s.xProfile === "");
-                if (position === -1) {
-                    modalStatus.textContent = "No sponsor slot found!";
+                const position_donationPosition = sponsors.findIndex(s => s.donor.toLowerCase() === account.toLowerCase() && s.xProfile === "");
+                if (_donationPosition === -1) {
+                    modalStatus.textContent = "No sponsor slot found for this donation!";
                     return;
                 }
-                const tx = await contract.addSponsor(position, xProfile, { gasLimit: 100000 });
+                const tx = await contract.addSponsor(_donationPosition, xProfile, { gasLimit: 150000 });
                 modalStatus.textContent = "Submitting profile...";
                 await tx.wait();
                 modalStatus.textContent = "Profile added successfully!";
@@ -739,17 +756,12 @@
         }
 
         function formatTime(seconds) {
-            if (seconds <= 0) return "0s";
+            if (seconds <= 0) return "Expired";
             const days = Math.floor(seconds / 86400);
             const hours = Math.floor((seconds % 86400) / 3600);
             const minutes = Math.floor((seconds % 3600) / 60);
             const secs = seconds % 60;
-            let result = "";
-            if (days > 0) result += `${days}d `;
-            if (hours > 0 || days > 0) result += `${hours}h `;
-            if (minutes > 0 || hours > 0 || days > 0) result += `${minutes}m `;
-            result += `${secs}s`;
-            return result.trim();
+            return `${days > 0 ? days + "d " : ""}${hours > 0 ? hours + "h " : ""}${minutes > 0 ? minutes + "m " : ""}${secs}s`.trim();
         }
 
         function disconnect() {
@@ -812,7 +824,7 @@
             requestAnimationFrame(animate);
         }
         window.addEventListener("resize", () => {
-            canvas.width = window.innerWidth;
+            canvas.width = window -1;
             canvas.height = window.innerHeight;
         });
         animate();
