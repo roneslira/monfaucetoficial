@@ -19,7 +19,7 @@
             --button-hover: #00D4FF;
             --disabled-opacity: 0.5;
             --font-family: 'Poppins', 'Montserrat', Arial, sans-serif;
-            --diamond: linear-gradient(135deg, #f0f0f0, #d3d3d3); /* Corrigido */
+            --diamond: linear-gradient(135deg, #f0f0f0, #d3d3d3);
             --gold: linear-gradient(135deg, #ffd700, #b8860b);
             --silver: linear-gradient(135deg, #c0c0c0, #808080);
             --bronze: linear-gradient(135deg, #cd7f32, #8c5523);
@@ -277,9 +277,9 @@
             max-width: 24rem;
             min-height: 450px;
             background: var(--box-background);
-            border: 2px solid var(--box-border);
-            border-radius: 1.2rem;
-            padding: 1rem;
+            border: 1px solid var(--box-border); /* Borda mais justa */
+            border-radius: 1rem;
+            padding: 0.5rem; /* Reduzido */
             text-align: center;
             box-shadow: 0 10px 20px var(--shadow-color), inset 0 0 10px rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
@@ -291,7 +291,7 @@
         }
         .sponsors-container h2 {
             font-size: 1.8rem;
-            margin-bottom: 1rem;
+            margin-bottom: 0.5rem; /* Reduzido */
             background: var(--gold);
             -webkit-background-clip: text;
             background-clip: text;
@@ -314,8 +314,8 @@
         }
         .sponsor-item {
             width: 100%;
-            padding: 0.6rem;
-            margin-bottom: 0.6rem;
+            padding: 0.4rem; /* Reduzido para achatar */
+            margin-bottom: 0.3rem; /* Reduzido */
             border-radius: 0.8rem;
             background: rgba(255, 255, 255, 0.05);
             text-align: left;
@@ -323,7 +323,7 @@
             transition: transform 0.3s ease, box-shadow 0.3s ease, filter 0.3s ease;
             display: flex;
             flex-direction: column;
-            gap: 0.3rem;
+            gap: 0.2rem; /* Reduzido */
             animation: slideUp 0.5s ease-out;
         }
         @keyframes slideUp {
@@ -334,6 +334,11 @@
             transform: scale(1.03);
             box-shadow: 0 6px 14px var(--shadow-color);
             filter: brightness(1.1);
+        }
+        .sponsor-item .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         .sponsor-diamond {
             border: 4px solid transparent;
@@ -395,7 +400,7 @@
             0%, 100% { box-shadow: 0 2px 4px rgba(184, 115, 51, 0.2), 0 0 4px rgba(184, 115, 51, 0.3); }
             50% { box-shadow: 0 2px 4px rgba(184, 115, 51, 0.2), 0 0 6px rgba(184, 115, 51, 0.4); }
         }
-        .sponsor-item p { font-size: 0.85rem; display: flex; align-items: center; gap: 0.3rem; }
+        .sponsor-item p { font-size: 0.85rem; display: flex; align-items: center; gap: 0.3rem; margin: 0; }
         .sponsor-item p:first-child { font-weight: bold; font-size: 0.95rem; }
         .sponsor-item button {
             background: var(--primary-color);
@@ -405,7 +410,6 @@
             color: var(--text-color);
             cursor: pointer;
             transition: background 0.3s ease;
-            align-self: flex-end;
         }
         .sponsor-item button:hover { background: var(--button-hover); }
         .sponsor-info-button {
@@ -415,7 +419,7 @@
             border: none;
             color: var(--text-color);
             cursor: pointer;
-            margin-top: 0.5rem;
+            margin-top: 0.3rem; /* Reduzido */
             transition: background 0.3s ease;
         }
         .sponsor-info-button:hover { background: var(--button-hover); }
@@ -425,6 +429,7 @@
             background: rgba(255, 255, 255, 0.1);
             border-radius: 0.2rem;
             overflow: hidden;
+            margin-bottom: 0.1rem; /* Encostado na borda */
         }
         .progress {
             height: 100%;
@@ -440,7 +445,7 @@
         }
         .badge.active { background: #00ff00; }
         .badge.inactive { background: #808080; }
-        .ad-image { width: 100%; height: auto; border-radius: 0.5rem; }
+        .ad-image { width: 100%; height: auto; border-radius: 0.5rem; margin: 0; padding: 0; }
         @media (max-width: 1400px) { .ad-container, .sponsors-container { display: none; } }
         @media (max-width: 768px) {
             .faucet-container { max-width: 90%; padding: 1.5rem; min-height: 400px; }
@@ -554,7 +559,7 @@
                 <li><i class="fas fa-trophy"></i> Gold: 700 MON - 6 days</li>
                 <li><i class="fas fa-medal"></i> Silver: 500 MON - 4 days</li>
                 <li><i class="fas fa-award"></i> Bronze: 200 MON - 2 days</li>
-                <li><i class="fas fa-coins"></i> Copper: 100 MON - 1 days</li>
+                <li><i class="fas fa-coins"></i> Copper: 100 MON - 1 day</li>
             </ul>
             <p>Your X profile will be displayed here!</p>
             <button class="modal-button" id="close-sponsor-info">Close</button>
@@ -644,10 +649,9 @@
         closeSponsorInfo.onclick = closeModal;
 
         donateAmount.addEventListener("input", (e) => {
-            if (e.target.value < 0) e.target.value = 0; // Impede valores negativos
+            if (e.target.value < 0) e.target.value = 0;
         });
 
-        // Debounce para resize
         function debounce(func, wait) {
             let timeout;
             return function executedFunction(...args) {
@@ -685,7 +689,6 @@
                 await loadSponsors();
                 status.textContent = "Wallet connected successfully!";
                 
-                // Monitorar mudanças de conta e rede
                 window.ethereum.on('accountsChanged', () => location.reload());
                 window.ethereum.on('chainChanged', () => location.reload());
             } catch (error) {
@@ -736,25 +739,30 @@
                 status.textContent = "Please connect your wallet first!";
                 return;
             }
-            const sponsors = await contract.getActiveSponsors();
-            const activeSponsors = sponsors.filter(s => s.donor !== "0x0000000000000000000000000000000000000000" && s.xProfile !== "");
-            if (activeSponsors.length === 0) {
-                tasksCompleted.followSponsors = true;
-                updateTaskButtons();
-                checkClaimStatus();
-                status.textContent = "No sponsors to follow!";
-                return;
+            try {
+                const sponsors = await contract.getActiveSponsors();
+                const activeSponsors = sponsors.filter(s => s.donor !== "0x0000000000000000000000000000000000000000" && s.xProfile !== "");
+                if (activeSponsors.length === 0) {
+                    tasksCompleted.followSponsors = true;
+                    updateTaskButtons();
+                    checkClaimStatus();
+                    status.textContent = "No sponsors to follow!";
+                    return;
+                }
+                activeSponsors.forEach(sponsor => window.open(sponsor.xProfile, "_blank"));
+                modalOverlay.style.display = "block";
+                confirmationModal.style.display = "block";
+                document.getElementById("confirm-yes").onclick = () => {
+                    tasksCompleted.followSponsors = true;
+                    updateTaskButtons();
+                    checkClaimStatus();
+                    closeModal();
+                };
+                document.getElementById("confirm-no").onclick = closeModal;
+            } catch (error) {
+                console.error("Follow sponsors error:", error);
+                status.textContent = "Failed to load sponsors.";
             }
-            activeSponsors.forEach(sponsor => window.open(sponsor.xProfile, "_blank"));
-            modalOverlay.style.display = "block";
-            confirmationModal.style.display = "block";
-            document.getElementById("confirm-yes").onclick = () => {
-                tasksCompleted.followSponsors = true;
-                updateTaskButtons();
-                checkClaimStatus();
-                closeModal();
-            };
-            document.getElementById("confirm-no").onclick = closeModal;
         }
 
         function closeModal() {
@@ -794,6 +802,8 @@
                 const cooldown = Number(await contract.cooldownPeriod());
                 const paused = await contract.paused();
                 const now = Math.floor(Date.now() / 1000);
+                const sponsors = await contract.getActiveSponsors();
+                const hasActiveSponsors = sponsors.some(s => s.donor !== "0x0000000000000000000000000000000000000000" && s.xProfile !== "");
 
                 if (paused) {
                     claimButton.disabled = true;
@@ -805,7 +815,7 @@
                     const timeLeft = last + cooldown - now;
                     status.textContent = `Cooldown active. Wait ${formatTime(timeLeft)}.`;
                     startCooldownCountdown(last, cooldown);
-                } else if (!tasksCompleted.followTwitter || !tasksCompleted.likePost) {
+                } else if (!tasksCompleted.followTwitter || !tasksCompleted.likePost || (hasActiveSponsors && !tasksCompleted.followSponsors)) {
                     claimButton.disabled = true;
                     claimButton.classList.remove("enabled");
                     status.textContent = "Complete all required tasks to claim.";
@@ -838,7 +848,7 @@
         }
 
         async function claimTokens() {
-            if (!tasksCompleted.connectWallet || !tasksCompleted.followTwitter || !tasksCompleted.likePost) {
+            if (!tasksCompleted.connectWallet || !tasksCompleted.followTwitter || !tasksCompleted.likePost || !tasksCompleted.followSponsors) {
                 status.textContent = "Complete all required tasks first!";
                 return;
             }
@@ -961,7 +971,7 @@
                 const sponsorLevels = ["Diamond", "Gold", "Silver", "Bronze", "Copper"];
                 const sponsorIcons = ["fa-gem", "fa-trophy", "fa-medal", "fa-award", "fa-coins"];
                 const sponsorAmounts = ["1000", "700", "500", "200", "100"];
-                const sponsorDurations = [30 * 86400, 25 * 86400, 20 * 86400, 15 * 86400, 10 * 86400]; // Segundos
+                const sponsorDurations = [8 * 86400, 6 * 86400, 4 * 86400, 2 * 86400, 1 * 86400]; // Corrigido para 8, 6, 4, 2, 1 dias
                 sponsorsList.innerHTML = "";
 
                 for (let i = 0; i < 5; i++) {
@@ -971,10 +981,13 @@
                     if (sponsor.donor === "0x0000000000000000000000000000000000000000") {
                         sponsorsList.innerHTML += `
                             <div class="sponsor-item ${sponsorClasses[i]}">
-                                <p><i class="fas ${sponsorIcons[i]}"></i> ${sponsorLevels[i]} Slot <span class="badge inactive"></span></p>
+                                <div class="header">
+                                    <p><i class="fas ${sponsorIcons[i]}"></i> ${sponsorLevels[i]} Slot <span class="badge inactive"></span></p>
+                                    <button onclick="document.getElementById('donateAmount').value = '${amount}'; donate();">Donate</button>
+                                </div>
                                 <p><i class="fas fa-coins"></i> ${amount} MON</p>
                                 <p><i class="fas fa-clock"></i> ${duration / 86400} days</p>
-                                <button onclick="document.getElementById('donateAmount').value = '${amount}'; donate();">Donate</button>
+                                <div class="progress-bar"><div class="progress" style="width: 0%"></div></div>
                             </div>`;
                     } else {
                         const timeLeft = Math.max(0, Number(sponsor.startTime) + Number(sponsor.duration) - Math.floor(Date.now() / 1000));
@@ -982,11 +995,13 @@
                         const progressPercentage = (timeLeft / duration) * 100;
                         sponsorsList.innerHTML += `
                             <div class="sponsor-item ${sponsorClasses[i]}">
-                                <p><i class="fas ${sponsorIcons[i]}"></i> @${username} (${sponsorLevels[i]}) <span class="badge active"></span></p>
+                                <div class="header">
+                                    <p><i class="fas ${sponsorIcons[i]}"></i> @${username} (${sponsorLevels[i]}) <span class="badge active"></span></p>
+                                    <button onclick="window.open('${sponsor.xProfile}', '_blank')">Follow</button>
+                                </div>
                                 <p><i class="fas fa-coins"></i> ${ethers.utils.formatEther(sponsor.amount)} MON</p>
                                 <p><i class="fas fa-clock"></i> Time left: <span id="timer-${i}">${formatTime(timeLeft)}</span></p>
                                 <div class="progress-bar"><div class="progress" id="progress-${i}" style="width: ${progressPercentage}%"></div></div>
-                                <button onclick="window.open('${sponsor.xProfile}', '_blank')">Follow</button>
                             </div>`;
                         if (timeLeft > 0) startTimer(i, timeLeft, duration);
                     }
@@ -1052,7 +1067,6 @@
             await loadSponsors();
         });
 
-        // Animação de partículas otimizada
         const canvas = document.querySelector("canvas");
         const ctx = canvas.getContext("2d");
         canvas.width = window.innerWidth;
@@ -1086,7 +1100,7 @@
 
         let lastFrame = 0;
         function animate(timestamp) {
-            if (timestamp - lastFrame < 1000 / 30) { // Limite de 30 FPS
+            if (timestamp - lastFrame < 1000 / 30) {
                 requestAnimationFrame(animate);
                 return;
             }
