@@ -15,10 +15,15 @@
             --text-color: #FFFFFF;
             --box-background: linear-gradient(to bottom, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.07));
             --box-border: rgba(255, 255, 255, 0.1);
-            --shadow-color: rgba(0, 0, 0, 0.3);
+            --shadow-color: rgba(0, 0, 0, 0.5);
             --button-hover: #00D4FF;
             --disabled-opacity: 0.5;
             --font-family: 'Poppins', 'Montserrat', Arial, sans-serif;
+            --platinum: linear-gradient(135deg, #e5e5e5, #b0b0b0); /* Platinum brilhoso */
+            --gold: linear-gradient(135deg, #ffd700, #b8860b); /* Gold brilhoso */
+            --silver: linear-gradient(135deg, #c0c0c0, #808080);
+            --bronze: linear-gradient(135deg, #cd7f32, #8c5523);
+            --copper: linear-gradient(135deg, #b87333, #804020);
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -218,6 +223,8 @@
             background: rgba(255, 255, 255, 0.05);
             color: var(--text-color);
             outline: none;
+            font-size: 1rem;
+            pointer-events: auto; /* Garante que o input seja editável */
         }
         .donate-container button {
             background: var(--accent-color);
@@ -239,19 +246,35 @@
             max-width: 24rem;
             min-height: 450px;
             background: var(--box-background);
-            border: 1px solid var(--box-border);
-            border-radius: 1rem;
-            padding: 1rem;
+            border: 2px solid var(--box-border);
+            border-radius: 1.2rem;
+            padding: 1.5rem;
             text-align: center;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start;
-            align-items: center;
+            box-shadow: 0 10px 20px var(--shadow-color), inset 0 0 10px rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
         }
         .sponsors-container {
             left: calc(50% - 650px);
             top: 50%;
             transform: translateY(-50%);
+        }
+        .sponsors-container h2 {
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+            background: var(--gold);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        .sponsors-container h2 i {
+            color: #ffd700;
+            font-size: 2rem;
+            text-shadow: 0 0 5px rgba(255, 215, 0, 0.8);
         }
         .ad-container {
             right: calc(50% - 650px);
@@ -260,17 +283,30 @@
         }
         .sponsor-item {
             width: 100%;
-            padding: 0.8rem;
-            margin-bottom: 0.5rem;
-            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 0.8rem;
+            border-recognition-radius: 0.8rem;
             background: rgba(255, 255, 255, 0.05);
             text-align: left;
+            box-shadow: 0 4px 8px var(--shadow-color);
+            transition: transform 0.3s ease;
         }
-        .sponsor-diamond { border: 2px solid #00b7ff; }
-        .sponsor-gold { border: 2px solid #ffd700; }
-        .sponsor-silver { border: 2px solid #c0c0c0; }
-        .sponsor-bronze { border: 2px solid #cd7f32; }
-        .sponsor-copper { border: 2px solid #b87333; }
+        .sponsor-item:hover { transform: scale(1.03); }
+        .sponsor-diamond { border: 3px solid transparent; background: var(--platinum); -webkit-background-clip: padding-box; background-clip: padding-box; }
+        .sponsor-gold { border: 3px solid transparent; background: var(--gold); -webkit-background-clip: padding-box; background-clip: padding-box; }
+        .sponsor-silver { border: 3px solid transparent; background: var(--silver); -webkit-background-clip: padding-box; background-clip: padding-box; }
+        .sponsor-bronze { border: 3px solid transparent; background: var(--bronze); -webkit-background-clip: padding-box; background-clip: padding-box; }
+        .sponsor-copper { border: 3px solid transparent; background: var(--copper); -webkit-background-clip: padding-box; background-clip: padding-box; }
+        .sponsor-item button {
+            background: var(--primary-color);
+            padding: 0.4rem 0.8rem;
+            border-radius: 0.5rem;
+            border: none;
+            color: var(--text-color);
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        .sponsor-item button:hover { background: var(--button-hover); }
         .ad-image { width: 100%; height: auto; border-radius: 0.5rem; }
         @media (max-width: 1400px) { .ad-container, .sponsors-container { display: none; } }
         @media (max-width: 768px) {
@@ -286,7 +322,7 @@
     <div class="main-content">
         <canvas></canvas>
         <div class="sponsors-container" id="sponsors-container">
-            <h2>Sponsors</h2>
+            <h2><i class="fas fa-crown"></i> Sponsors</h2>
             <div id="sponsors-list"></div>
         </div>
         <div class="wallet-info" id="walletInfo">
@@ -336,7 +372,7 @@
             <div class="status" id="status"></div>
         </div>
         <div class="donate-container">
-            <input type="number" id="donateAmount" placeholder="MON" step="0.01">
+            <input type="number" id="donateAmount" placeholder="Enter MON amount" step="0.01" min="0">
             <button id="donateButton">Donate</button>
         </div>
         <div class="ad-container">
@@ -436,6 +472,11 @@
         disconnectWallet.onclick = disconnect;
         donateButton.onclick = donate;
         submitXProfile.onclick = submitSponsorProfile;
+
+        // Verifica o input do donate em tempo real
+        donateAmount.addEventListener("input", (e) => {
+            console.log("Valor do input de doação:", e.target.value);
+        });
 
         async function connectWallet() {
             if (!window.ethereum) {
@@ -613,7 +654,7 @@
                 return;
             }
             try {
-                const tx = await contract.claim({ gasLimit: 150000 });
+                const tx = await contract.claim({ gasLimit: 200000 });
                 status.textContent = "Claiming tokens...";
                 await tx.wait();
                 status.textContent = "Tokens claimed successfully!";
@@ -632,6 +673,7 @@
                 return;
             }
             const amount = donateAmount.value;
+            console.log("Tentando doar:", amount);
             if (!amount || amount <= 0) {
                 status.textContent = "Please enter a valid amount!";
                 return;
@@ -643,11 +685,13 @@
                     return;
                 }
 
-                // Verifica se há slots disponíveis
+                // Verifica slots disponíveis
                 let slotAvailable = false;
+                let availableSlot = -1;
                 for (let i = 0; i < 5; i++) {
                     if (await contract.isSponsorSlotAvailable(i)) {
                         slotAvailable = true;
+                        availableSlot = i;
                         break;
                     }
                 }
@@ -657,12 +701,19 @@
                 }
 
                 const valueInWei = ethers.utils.parseEther(amount);
-                const tx = await contract.deposit({ value: valueInWei, gasLimit: 150000 });
+                console.log("Valor em Wei:", valueInWei.toString());
+                const sponsorAmounts = ["1000", "700", "500", "200", "100"];
+                if (!sponsorAmounts.includes(amount)) {
+                    status.textContent = "Please donate 1000, 700, 500, 200, or 100 MON to become a sponsor!";
+                    return;
+                }
+
+                const tx = await contract.deposit({ value: valueInWei, gasLimit: 200000 });
                 status.textContent = "Processing donation...";
                 const receipt = await tx.wait();
+                console.log("Receipt da transação:", receipt);
 
                 const sponsorLevels = ["Diamond", "Gold", "Silver", "Bronze", "Copper"];
-                const sponsorAmounts = ["1000", "700", "500", "200", "100"];
                 const donatedAmount = ethers.utils.formatEther(valueInWei);
                 const sponsorIndex = sponsorAmounts.indexOf(donatedAmount);
 
@@ -677,7 +728,7 @@
                 await loadSponsors();
             } catch (error) {
                 console.error("Donate error:", error);
-                status.textContent = `Error: ${error.message}`;
+                status.textContent = `Error: ${error.message || error.reason || "Transaction failed"}`;
             }
         }
 
@@ -689,12 +740,12 @@
             }
             try {
                 const sponsors = await contract.getActiveSponsors();
-                const position_donationPosition = sponsors.findIndex(s => s.donor.toLowerCase() === account.toLowerCase() && s.xProfile === "");
-                if (_donationPosition === -1) {
+                const position = sponsors.findIndex(s => s.donor.toLowerCase() === account.toLowerCase() && s.xProfile === "");
+                if (position === -1) {
                     modalStatus.textContent = "No sponsor slot found for this donation!";
                     return;
                 }
-                const tx = await contract.addSponsor(_donationPosition, xProfile, { gasLimit: 150000 });
+                const tx = await contract.addSponsor(position, xProfile, { gasLimit: 200000 });
                 modalStatus.textContent = "Submitting profile...";
                 await tx.wait();
                 modalStatus.textContent = "Profile added successfully!";
@@ -710,6 +761,7 @@
             try {
                 const sponsors = await contract.getActiveSponsors();
                 const sponsorClasses = ["sponsor-diamond", "sponsor-gold", "sponsor-silver", "sponsor-bronze", "sponsor-copper"];
+                const sponsorLevels = ["Diamond", "Gold", "Silver", "Bronze", "Copper"];
                 sponsorsList.innerHTML = "";
 
                 for (let i = 0; i < 5; i++) {
@@ -719,16 +771,16 @@
                     if (sponsor.donor === "0x0000000000000000000000000000000000000000") {
                         sponsorsList.innerHTML += `
                             <div class="sponsor-item ${sponsorClasses[i]}">
-                                <p>Sponsor this spot:</p>
+                                <p>${sponsorLevels[i]} Sponsor Slot</p>
                                 <p>${amount} MON for ${duration} day${duration > 1 ? "s" : ""}</p>
-                                <button onclick="document.getElementById('donateAmount').value = '${amount}';">Set Amount</button>
+                                <button onclick="document.getElementById('donateAmount').value = '${amount}'; donate();">Donate</button>
                             </div>`;
                     } else {
                         const timeLeft = Math.max(0, Number(sponsor.startTime) + Number(sponsor.duration) - Math.floor(Date.now() / 1000));
                         const username = sponsor.xProfile.split("https://x.com/")[1] || "Unknown";
                         sponsorsList.innerHTML += `
                             <div class="sponsor-item ${sponsorClasses[i]}">
-                                <p>@${username}</p>
+                                <p>@${username} (${sponsorLevels[i]})</p>
                                 <button onclick="window.open('${sponsor.xProfile}', '_blank')">Follow</button>
                                 <p>Time left: <span id="timer-${i}">${formatTime(timeLeft)}</span></p>
                             </div>`;
@@ -824,7 +876,7 @@
             requestAnimationFrame(animate);
         }
         window.addEventListener("resize", () => {
-            canvas.width = window -1;
+            canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
         });
         animate();
