@@ -412,6 +412,14 @@
             transition: background 0.3s ease;
         }
         .sponsor-item button:hover { background: var(--button-hover); }
+        .sponsor-item button.pulse {
+            animation: pulseFollow 1.5s infinite;
+        }
+        @keyframes pulseFollow {
+            0% { transform: scale(1); box-shadow: 0 0 5px var(--primary-color); }
+            50% { transform: scale(1.05); box-shadow: 0 0 10px var(--primary-color); }
+            100% { transform: scale(1); box-shadow: 0 0 5px var(--primary-color); }
+        }
         .sponsor-info-button {
             background: var(--accent-color);
             padding: 0.5rem 1rem;
@@ -498,8 +506,9 @@
                 <button class="task-button" id="followSponsorsButton" disabled title="Follow our sponsors on X">
                     <div class="flex items-center gap-3">
                         <i class="fab fa-twitter icon"></i>
-                        <span>Follow Sponsors</span>
+                        <span id="followSponsorsText">Follow Sponsors</span>
                     </div>
+                    <div class="spinner" id="followSpinner"></div>
                     <i class="fas fa-arrow-right arrow"></i>
                 </button>
             </div>
@@ -532,7 +541,7 @@
     </div>
     <div id="modal-overlay"></div>
     <div id="confirmation-modal" class="modal">
-        <div class="modal-content">Did you complete the task?</div>
+        <div class="modal-content" id="modalMessage">Did you complete the task?</div>
         <div class="modal-buttons">
             <button class="modal-button" id="confirm-yes">Yes</button>
             <button class="modal-button" id="confirm-no">No</button>
@@ -607,11 +616,15 @@
 
         let provider, signer, contract, account;
         let tasksCompleted = { connectWallet: false, followTwitter: false, likePost: false, followSponsors: false };
+        let sponsorsFollowed = 0;
+        let totalActiveSponsors = 0;
 
         const connectWalletButton = document.getElementById("connectWalletButton");
         const followTwitterButton = document.getElementById("followTwitterButton");
         const likePostButton = document.getElementById("likePostButton");
         const followSponsorsButton = document.getElementById("followSponsorsButton");
+        const followSponsorsText = document.getElementById("followSponsorsText");
+        const followSpinner = document.getElementById("followSpinner");
         const claimButton = document.getElementById("claimButton");
         const claimSpinner = document.getElementById("claimSpinner");
         const disconnectWallet = document.getElementById("disconnectWallet");
@@ -627,6 +640,7 @@
         const lastClaim = document.getElementById("lastClaim");
         const modalOverlay = document.getElementById("modal-overlay");
         const confirmationModal = document.getElementById("confirmation-modal");
+        const modalMessage = document.getElementById("modalMessage");
         const sponsorModal = document.getElementById("sponsor-modal");
         const sponsorInfoModal = document.getElementById("sponsor-info-modal");
         const sponsorLevelSpan = document.getElementById("sponsorLevel");
@@ -706,12 +720,27 @@
             followTwitterButton.style.opacity = tasksCompleted.followTwitter ? "0.5" : "1";
             likePostButton.style.opacity = tasksCompleted.likePost ? "0.5" : "1";
             followSponsorsButton.style.opacity = tasksCompleted.followSponsors ? "0.5" : "1";
+            updateFollowSponsorsButton();
+        }
+
+        function updateFollowSponsorsButton() {
+            if (tasksCompleted.followSponsors) {
+                followSponsorsText.textContent = "Claim Released";
+                followSpinner.style.display = "none";
+            } else if (sponsorsFollowed > 0) {
+                followSponsorsText.textContent = `Follow ${sponsorsFollowed}/${totalActiveSponsors}`;
+                followSpinner.style.display = "block";
+            } else {
+                followSponsorsText.textContent = "Follow Sponsors";
+                followSpinner.style.display = "none";
+            }
         }
 
         async function followTwitter() {
             window.open("https://x.com/monad_xyz", "_blank");
             modalOverlay.style.display = "block";
             confirmationModal.style.display = "block";
+            modalMessage.textContent = "Did you follow @monad_xyz on X?";
             document.getElementById("confirm-yes").onclick = () => {
                 tasksCompleted.followTwitter = true;
                 updateTaskButtons();
@@ -725,6 +754,7 @@
             window.open("https://x.com/monad_xyz/status/1831350513247064500", "_blank");
             modalOverlay.style.display = "block";
             confirmationModal.style.display = "block";
+            modalMessage.textContent = "Did you like the post on X?";
             document.getElementById("confirm-yes").onclick = () => {
                 tasksCompleted.likePost = true;
                 updateTaskButtons();
@@ -742,18 +772,30 @@
             try {
                 const sponsors = await contract.getActiveSponsors();
                 const activeSponsors = sponsors.filter(s => s.donor !== "0x0000000000000000000000000000000000000000" && s.xProfile !== "");
-                if (activeSponsors.length === 0) {
+                totalActiveSponsors = activeSponsors.length;
+
+                if (totalActiveSponsors === 0) {
                     tasksCompleted.followSponsors = true;
                     updateTaskButtons();
                     checkClaimStatus();
                     status.textContent = "No sponsors to follow!";
                     return;
                 }
-                activeSponsors.forEach(sponsor => window.open(sponsor.xProfile, "_blank"));
+
+                // Ativar efeito pulsante nos botões "Follow"
+                document.querySelectorAll(".sponsor-item button").forEach(btn => {
+                    if (btn.textContent === "Follow") btn.classList.add("pulse");
+                });
+
                 modalOverlay.style.display = "block";
                 confirmationModal.style.display = "block";
+                modalMessage.textContent = "Follow the sponsors";
                 document.getElementById("confirm-yes").onclick = () => {
-                    tasksCompleted.followSponsors = true;
+                    sponsorsFollowed++;
+                    if (sponsorsFollowed >= totalActiveSponsors) {
+                        tasksCompleted.followSponsors = true;
+                        document.querySelectorAll(".sponsor-item button").forEach(btn => btn.classList.remove("pulse"));
+                    }
                     updateTaskButtons();
                     checkClaimStatus();
                     closeModal();
@@ -860,6 +902,7 @@
                 await tx.wait();
                 status.textContent = "Tokens claimed successfully!";
                 tasksCompleted.followSponsors = false;
+                sponsorsFollowed = 0;
                 updateTaskButtons();
                 await updateUI();
             } catch (error) {
@@ -971,7 +1014,7 @@
                 const sponsorLevels = ["Diamond", "Gold", "Silver", "Bronze", "Copper"];
                 const sponsorIcons = ["fa-gem", "fa-trophy", "fa-medal", "fa-award", "fa-coins"];
                 const sponsorAmounts = ["1000", "700", "500", "200", "100"];
-                const sponsorDurations = [7 * 86400, 4 * 86400, 2 * 86400, 1 * 86400, 12 * 3600]; // Corrigido: 7 dias, 4 dias, 2 dias, 1 dia, 12 horas
+                const sponsorDurations = [7 * 86400, 4 * 86400, 2 * 86400, 1 * 86400, 12 * 3600];
                 sponsorsList.innerHTML = "";
 
                 for (let i = 0; i < 5; i++) {
@@ -1045,6 +1088,8 @@
             contract = null;
             account = null;
             tasksCompleted = { connectWallet: false, followTwitter: false, likePost: false, followSponsors: false };
+            sponsorsFollowed = 0;
+            totalActiveSponsors = 0;
             walletInfo.style.display = "none";
             updateTaskButtons();
             checkClaimStatus();
