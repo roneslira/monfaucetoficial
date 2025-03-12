@@ -618,6 +618,7 @@
         let tasksCompleted = { connectWallet: false, followTwitter: false, likePost: false, followSponsors: false };
         let sponsorsFollowed = 0;
         let totalActiveSponsors = 0;
+        let followProcessStarted = false;
 
         const connectWalletButton = document.getElementById("connectWalletButton");
         const followTwitterButton = document.getElementById("followTwitterButton");
@@ -654,7 +655,7 @@
         connectWalletButton.onclick = connectWallet;
         followTwitterButton.onclick = followTwitter;
         likePostButton.onclick = likePost;
-        followSponsorsButton.onclick = followSponsors;
+        followSponsorsButton.onclick = startFollowSponsors;
         claimButton.onclick = claimTokens;
         disconnectWallet.onclick = disconnect;
         copyWallet.onclick = copyAddress;
@@ -727,7 +728,7 @@
             if (tasksCompleted.followSponsors) {
                 followSponsorsText.textContent = "Claim Released";
                 followSpinner.style.display = "none";
-            } else if (sponsorsFollowed > 0) {
+            } else if (followProcessStarted) {
                 followSponsorsText.textContent = `Follow ${sponsorsFollowed}/${totalActiveSponsors}`;
                 followSpinner.style.display = "block";
             } else {
@@ -764,7 +765,7 @@
             document.getElementById("confirm-no").onclick = closeModal;
         }
 
-        async function followSponsors() {
+        async function startFollowSponsors() {
             if (!tasksCompleted.connectWallet) {
                 status.textContent = "Please connect your wallet first!";
                 return;
@@ -782,14 +783,26 @@
                     return;
                 }
 
-                // Ativar efeito pulsante nos botões "Follow"
-                document.querySelectorAll(".sponsor-item button").forEach(btn => {
-                    if (btn.textContent === "Follow") btn.classList.add("pulse");
-                });
+                if (!followProcessStarted) {
+                    followProcessStarted = true;
+                    status.textContent = "Follow the sponsors";
+                    document.querySelectorAll(".sponsor-item button").forEach(btn => {
+                        if (btn.textContent === "Follow") btn.classList.add("pulse");
+                    });
+                    updateFollowSponsorsButton();
+                }
+            } catch (error) {
+                console.error("Start follow sponsors error:", error);
+                status.textContent = "Failed to load sponsors.";
+            }
+        }
 
+        function handleSponsorFollow(url) {
+            window.open(url, "_blank");
+            setTimeout(() => {
                 modalOverlay.style.display = "block";
                 confirmationModal.style.display = "block";
-                modalMessage.textContent = "Follow the sponsors";
+                modalMessage.textContent = "Did you follow this sponsor on X?";
                 document.getElementById("confirm-yes").onclick = () => {
                     sponsorsFollowed++;
                     if (sponsorsFollowed >= totalActiveSponsors) {
@@ -801,10 +814,7 @@
                     closeModal();
                 };
                 document.getElementById("confirm-no").onclick = closeModal;
-            } catch (error) {
-                console.error("Follow sponsors error:", error);
-                status.textContent = "Failed to load sponsors.";
-            }
+            }, 500); // Pequeno delay para garantir que o modal apareça após o clique
         }
 
         function closeModal() {
@@ -903,6 +913,7 @@
                 status.textContent = "Tokens claimed successfully!";
                 tasksCompleted.followSponsors = false;
                 sponsorsFollowed = 0;
+                followProcessStarted = false;
                 updateTaskButtons();
                 await updateUI();
             } catch (error) {
@@ -1040,7 +1051,7 @@
                             <div class="sponsor-item ${sponsorClasses[i]}">
                                 <div class="header">
                                     <p><i class="fas ${sponsorIcons[i]}"></i> @${username} (${sponsorLevels[i]}) <span class="badge active"></span></p>
-                                    <button onclick="window.open('${sponsor.xProfile}', '_blank')">Follow</button>
+                                    <button onclick="handleSponsorFollow('${sponsor.xProfile}')">Follow</button>
                                 </div>
                                 <p><i class="fas fa-coins"></i> ${ethers.utils.formatEther(sponsor.amount)} MON</p>
                                 <p><i class="fas fa-clock"></i> Time left: <span id="timer-${i}">${formatTime(timeLeft)}</span></p>
@@ -1090,6 +1101,7 @@
             tasksCompleted = { connectWallet: false, followTwitter: false, likePost: false, followSponsors: false };
             sponsorsFollowed = 0;
             totalActiveSponsors = 0;
+            followProcessStarted = false;
             walletInfo.style.display = "none";
             updateTaskButtons();
             checkClaimStatus();
