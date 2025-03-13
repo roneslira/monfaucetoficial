@@ -491,7 +491,7 @@
                     </div>
                     <i class="fas fa-arrow-right arrow"></i>
                 </button>
-                <button class="task-button" id="followTwitterButton" title="Follow @monad_xyz on X">
+                <button class="task-button" id="followTwitterButton" title="Follow @_roneslira on X">
                     <div class="flex items-center gap-3">
                         <i class="fab fa-twitter icon"></i>
                         <span>Follow on X</span>
@@ -784,32 +784,32 @@
         }
 
         async function followTwitter() {
-            window.open("https://x.com/monad_xyz", "_blank");
-            modalOverlay.style.display = "block";
-            confirmationModal.style.display = "block";
-            modalMessage.textContent = "Did you follow @monad_xyz on X?";
-            document.getElementById("confirm-yes").onclick = () => {
-                tasksCompleted.followTwitter = true;
-                updateTaskButtons();
-                checkClaimStatus();
-                closeModal();
-            };
-            document.getElementById("confirm-no").onclick = closeModal;
-        }
+    window.open("https://x.com/_roneslira", "_blank");
+    modalOverlay.style.display = "block";
+    confirmationModal.style.display = "block";
+    modalMessage.textContent = "Did you follow @_roneslira on X?";
+    document.getElementById("confirm-yes").onclick = () => {
+        tasksCompleted.followTwitter = true;
+        updateTaskButtons();
+        checkClaimStatus();
+        closeModal();
+    };
+    document.getElementById("confirm-no").onclick = closeModal;
+}
 
-        async function likePost() {
-            window.open("https://x.com/monad_xyz/status/1831350513247064500", "_blank");
-            modalOverlay.style.display = "block";
-            confirmationModal.style.display = "block";
-            modalMessage.textContent = "Did you like the post on X?";
-            document.getElementById("confirm-yes").onclick = () => {
-                tasksCompleted.likePost = true;
-                updateTaskButtons();
-                checkClaimStatus();
-                closeModal();
-            };
-            document.getElementById("confirm-no").onclick = closeModal;
-        }
+async function likePost() {
+    window.open("https://x.com/_roneslira/status/1900013122238169182", "_blank");
+    modalOverlay.style.display = "block";
+    confirmationModal.style.display = "block";
+    modalMessage.textContent = "Did you like the post on X?";
+    document.getElementById("confirm-yes").onclick = () => {
+        tasksCompleted.likePost = true;
+        updateTaskButtons();
+        checkClaimStatus();
+        closeModal();
+    };
+    document.getElementById("confirm-no").onclick = closeModal;
+}
 
         async function startFollowSponsors() {
             if (!tasksCompleted.connectWallet) {
