@@ -910,8 +910,10 @@
         async function switchRpc() {
     rpcIndex = (rpcIndex + 1) % MONAD_TESTNET.rpcUrls.length;
     provider = new ethers.providers.JsonRpcProvider(MONAD_TESTNET.rpcUrls[rpcIndex]);
-    signer = provider.getSigner();
-    contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+    if (account) {
+        signer = provider.getSigner(account);
+        contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+    }
     console.log(`Switched to RPC: ${MONAD_TESTNET.rpcUrls[rpcIndex]}`);
 }
 
@@ -922,7 +924,7 @@ async function retryOperation(operation, maxRetries = 3) {
         } catch (error) {
             if (error.code === 429 || error.message.includes("rate limit")) {
                 await switchRpc();
-                await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1))); // Exponential backoff
+                await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
                 if (i === maxRetries - 1) throw new Error("Max retries reached");
             } else {
                 throw error;
@@ -943,10 +945,13 @@ function updateLanguage() {
 }
 
 function updateClaimButton() {
-    const allTasksDone = Object.values(tasksCompleted).every(v => v);
-    elements.claimButton.disabled = !allTasksDone || !account;
-    elements.claimButton.classList.toggle("enabled", allTasksDone && account);
-    elements.status.textContent = allTasksDone && account ? translations[currentLanguage].ready_to_claim : translations[currentLanguage].complete_all_tasks;
+    const allTasksDone = Object.values(tasksCompleted).every(v => v) && totalActiveSponsors === sponsorsFollowed;
+    const isCooldownOver = account && lastClaimTime && (Math.floor(Date.now() / 1000) >= (Number(lastClaimTime) + Number(cooldownPeriod)));
+    elements.claimButton.disabled = !(allTasksDone && account && (isCooldownOver || lastClaimTime.toString() === "0"));
+    elements.claimButton.classList.toggle("enabled", allTasksDone && account && (isCooldownOver || lastClaimTime.toString() === "0"));
+    elements.status.textContent = allTasksDone && account && (isCooldownOver || lastClaimTime.toString() === "0") 
+        ? translations[currentLanguage].ready_to_claim 
+        : translations[currentLanguage].complete_all_tasks;
 }
 
 async function connectWallet() {
@@ -955,10 +960,10 @@ async function connectWallet() {
         return;
     }
     try {
-        await window.ethereum.request({ method: "eth_requestAccounts" });
+        const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
         provider = new ethers.providers.Web3Provider(window.ethereum);
         signer = provider.getSigner();
-        account = await signer.getAddress();
+        account = accounts[0];
         contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
 
         const network = await provider.getNetwork();
@@ -982,11 +987,14 @@ async function connectWallet() {
 
         elements.walletAddress.textContent = `${account.slice(0, 6)}...${account.slice(-4)}`;
         elements.walletInfo.style.display = "flex";
+        elements.connectWalletButton.disabled = true;
+        elements.connectWalletButton.querySelector("span").textContent = "Wallet Connected";
         tasksCompleted.connectWallet = true;
         localStorage.setItem("tasksCompleted", JSON.stringify(tasksCompleted));
         elements.status.textContent = translations[currentLanguage].wallet_connected_successfully;
-        updateClaimButton();
         await loadUIData();
+        await loadSponsors();
+        updateClaimButton();
     } catch (error) {
         console.error(error);
         elements.status.textContent = translations[currentLanguage].failed_to_connect_wallet;
@@ -1015,6 +1023,8 @@ function handleFollowTwitter() {
         showConfirmationModal(translations[currentLanguage].did_you_follow, () => {
             tasksCompleted.followTwitter = true;
             localStorage.setItem("tasksCompleted", JSON.stringify(tasksCompleted));
+            elements.followTwitterButton.disabled = true;
+            elements.followTwitterButton.querySelector("span").textContent = "Followed";
             updateClaimButton();
         });
     }, 2000);
@@ -1026,12 +1036,15 @@ function handleLikePost() {
         showConfirmationModal(translations[currentLanguage].did_you_like, () => {
             tasksCompleted.likePost = true;
             localStorage.setItem("tasksCompleted", JSON.stringify(tasksCompleted));
+            elements.likePostButton.disabled = true;
+            elements.likePostButton.querySelector("span").textContent = "Liked";
             updateClaimButton();
         });
     }, 2000);
 }
 
 async function loadSponsors() {
+    if (!contract) return;
     try {
         const sponsors = await retryOperation(() => contract.getActiveSponsors());
         totalActiveSponsors = sponsors.filter(s => s.donor !== ethers.constants.AddressZero).length;
@@ -1087,13 +1100,15 @@ async function handleFollowSponsor(event) {
     setTimeout(() => {
         showConfirmationModal(`${translations[currentLanguage].did_you_follow_sponsor} (${profile.split("/").pop()})`, () => {
             sponsorsFollowed++;
-            event.target.classList.add("pulse");
+            event.target.disabled = true;
+            event.target.textContent = "Followed";
             if (sponsorsFollowed === totalActiveSponsors && followProcessStarted) {
                 tasksCompleted.followSponsors = true;
                 localStorage.setItem("tasksCompleted", JSON.stringify(tasksCompleted));
-                updateClaimButton();
+                elements.followSponsorsButton.disabled = true;
+                elements.followSponsorsText.textContent = "Sponsors Followed";
                 elements.followSpinner.style.display = "none";
-                elements.followSponsorsText.style.display = "block";
+                updateClaimButton();
             }
         });
     }, 2000);
@@ -1109,19 +1124,22 @@ async function handleFollowSponsors() {
         return;
     }
     followProcessStarted = true;
-    followButtonClicks++;
     elements.followSpinner.style.display = "block";
     elements.followSponsorsText.style.display = "none";
     elements.status.textContent = translations[currentLanguage].follow_active_sponsors;
 }
 
+let lastClaimTime = null;
+let cooldownPeriod = null;
+
 async function loadUIData() {
+    if (!contract) return;
     try {
         const balance = await retryOperation(() => contract.getBalance());
         const claimAmount = await retryOperation(() => contract.claimAmount());
-        const lastClaimTime = await retryOperation(() => contract.lastClaim(account));
+        lastClaimTime = await retryOperation(() => contract.lastClaim(account));
         const paused = await retryOperation(() => contract.paused());
-        const cooldown = await retryOperation(() => contract.cooldownPeriod());
+        cooldownPeriod = await retryOperation(() => contract.cooldownPeriod());
 
         elements.available.textContent = `${ethers.utils.formatEther(balance)} MON`;
         elements.claimAmount.textContent = `${ethers.utils.formatEther(claimAmount)} MON`;
@@ -1131,7 +1149,7 @@ async function loadUIData() {
             elements.status.textContent = translations[currentLanguage].claims_paused;
             elements.claimButton.disabled = true;
         } else {
-            const nextClaim = Number(lastClaimTime) + Number(cooldown);
+            const nextClaim = Number(lastClaimTime) + Number(cooldownPeriod);
             const now = Math.floor(Date.now() / 1000);
             if (nextClaim > now) {
                 const timeLeft = nextClaim - now;
@@ -1149,7 +1167,7 @@ async function loadUIData() {
 }
 
 async function claimTokens() {
-    if (!account) {
+    if (!account || !contract) {
         elements.status.textContent = translations[currentLanguage].please_connect_wallet;
         return;
     }
@@ -1164,7 +1182,14 @@ async function claimTokens() {
         localStorage.setItem("tasksCompleted", JSON.stringify(tasksCompleted));
         sponsorsFollowed = 0;
         followProcessStarted = false;
+        elements.followTwitterButton.disabled = false;
+        elements.followTwitterButton.querySelector("span").textContent = translations[currentLanguage].follow_on_x;
+        elements.likePostButton.disabled = false;
+        elements.likePostButton.querySelector("span").textContent = translations[currentLanguage].like_post;
+        elements.followSponsorsButton.disabled = false;
+        elements.followSponsorsText.textContent = translations[currentLanguage].follow_sponsors;
         await loadUIData();
+        await loadSponsors();
     } catch (error) {
         console.error(error);
         elements.status.textContent = translations[currentLanguage].failed_to_claim;
@@ -1175,7 +1200,7 @@ async function claimTokens() {
 }
 
 async function handleDonation() {
-    if (!account) {
+    if (!account || !contract) {
         elements.status.textContent = translations[currentLanguage].please_connect_wallet;
         return;
     }
@@ -1242,6 +1267,7 @@ async function handleDonation() {
 }
 
 async function findAvailableSponsorSlot() {
+    if (!contract) return -1;
     for (let i = 0; i < 5; i++) {
         const available = await retryOperation(() => contract.isSponsorSlotAvailable(i));
         if (available) return i;
@@ -1257,6 +1283,8 @@ function disconnectWallet() {
     elements.walletInfo.style.display = "none";
     tasksCompleted.connectWallet = false;
     localStorage.setItem("tasksCompleted", JSON.stringify(tasksCompleted));
+    elements.connectWalletButton.disabled = false;
+    elements.connectWalletButton.querySelector("span").textContent = translations[currentLanguage].connect_wallet;
     elements.status.textContent = translations[currentLanguage].wallet_disconnected;
     updateClaimButton();
 }
@@ -1315,7 +1343,7 @@ document.addEventListener("DOMContentLoaded", () => {
     updateLanguage();
     initializeCanvas();
     cycleAds();
-    loadSponsors();
+    updateClaimButton();
 
     elements.connectWalletButton.addEventListener("click", connectWallet);
     elements.followTwitterButton.addEventListener("click", handleFollowTwitter);
