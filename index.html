@@ -581,8 +581,8 @@
             </button>
         </div>
         <div class="ad-container">
-            <a id="adLink" href="" target="_blank">
-                <img id="adImage" src="" alt="Ad Space">
+            <a href="https://airdropsmanager.com/" target="_blank">
+                <img id="adImage" src="https://i.imgur.com/NgWonX9.png" alt="Ad Space">
             </a>
         </div>
         <div class="decorative-blur blur-1"></div>
@@ -659,7 +659,7 @@
     </footer>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
     <script>
-                const CONTRACT_ADDRESS = "0xF3D72b267890b0854ad126A26F39Cf221491D35A";
+        const CONTRACT_ADDRESS = "0xF3D72b267890b0854ad126A26F39Cf221491D35A";
         const ABI = [
             {"inputs":[],"stateMutability":"nonpayable","type":"constructor"},
             {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"Claimed","type":"event"},
@@ -783,15 +783,6 @@
             }
         };
 
-        const ads = [
-            { url: "https://airdropsmanager.com/", image: "https://i.imgur.com/NgWonX9.png" },
-            { url: "https://example1.com", image: "https://via.placeholder.com/300x600?text=Ad+1" },
-            { url: "https://example2.com", image: "https://via.placeholder.com/300x600?text=Ad+2" },
-            { url: "https://example3.com", image: "https://via.placeholder.com/300x600?text=Ad+3" },
-            { url: "https://example4.com", image: "https://via.placeholder.com/300x600?text=Ad+4" }
-        ];
-        let currentAdIndex = 0;
-
         let provider, signer, contract, account;
         let tasksCompleted = { connectWallet: false, followTwitter: false, likePost: false, followSponsors: false };
         let sponsorsFollowed = 0;
@@ -882,9 +873,6 @@
             });
         }
 
-        // Chama updateLanguage imediatamente para evitar mistura de idiomas
-        updateLanguage();
-
         async function connectWallet() {
             if (!window.ethereum) {
                 status.textContent = currentLanguage === "en" ? "Please install MetaMask!" : "Por favor, instale o MetaMask!";
@@ -905,7 +893,6 @@
                 walletAddress.textContent = `${account.slice(0, 6)}...${account.slice(-4)}`;
                 walletInfo.style.display = "flex";
                 tasksCompleted.connectWallet = true;
-                saveTasksState();
                 localStorage.setItem("walletConnected", "true");
                 localStorage.setItem("lastActive", Date.now());
                 updateTaskButtons();
@@ -953,7 +940,6 @@
             modalMessage.textContent = currentLanguage === "en" ? "Did you follow @_roneslira on X?" : "Você seguiu @_roneslira no X?";
             document.getElementById("confirm-yes").onclick = () => {
                 tasksCompleted.followTwitter = true;
-                saveTasksState();
                 updateTaskButtons();
                 checkClaimStatus();
                 closeModal();
@@ -968,7 +954,6 @@
             modalMessage.textContent = currentLanguage === "en" ? "Did you like the post on X?" : "Você curtiu o post no X?";
             document.getElementById("confirm-yes").onclick = () => {
                 tasksCompleted.likePost = true;
-                saveTasksState();
                 updateTaskButtons();
                 checkClaimStatus();
                 closeModal();
@@ -989,7 +974,6 @@
 
                 if (totalActiveSponsors === 0) {
                     tasksCompleted.followSponsors = true;
-                    saveTasksState();
                     updateTaskButtons();
                     checkClaimStatus();
                     status.textContent = currentLanguage === "en" ? "No sponsors to follow!" : "Nenhum sponsor para seguir!";
@@ -1029,8 +1013,8 @@
                     sponsorsFollowed++;
                     if (sponsorsFollowed >= totalActiveSponsors) {
                         tasksCompleted.followSponsors = true;
+                        document.querySelectorAll(".sponsor-item button").forEach(btn => btn.classList.remove("pulse"));
                     }
-                    saveTasksState();
                     updateTaskButtons();
                     checkClaimStatus();
                     closeModal();
@@ -1124,16 +1108,6 @@
             updateTimer();
         }
 
-        async function getGasEstimate(txParams) {
-            try {
-                const gasEstimate = await provider.estimateGas(txParams);
-                return gasEstimate.mul(120).div(100); // +20% de margem
-            } catch (error) {
-                console.error("Gas estimation error:", error);
-                return ethers.BigNumber.from("200000"); // Fallback
-            }
-        }
-
         async function claimTokens() {
             if (!tasksCompleted.connectWallet || !tasksCompleted.followTwitter || !tasksCompleted.likePost || !tasksCompleted.followSponsors) {
                 status.textContent = currentLanguage === "en" ? "Complete all required tasks first!" : "Complete todas as tarefas primeiro!";
@@ -1143,14 +1117,12 @@
                 claimButton.disabled = true;
                 claimSpinner.style.display = "block";
                 status.textContent = currentLanguage === "en" ? "Claiming tokens..." : "Fazendo claim dos tokens...";
-                const gasLimit = await getGasEstimate({ from: account, to: CONTRACT_ADDRESS, data: contract.interface.encodeFunctionData("claim") });
-                const tx = await contract.claim({ gasLimit });
+                const tx = await contract.claim({ gasLimit: 200000 });
                 await tx.wait();
                 status.textContent = currentLanguage === "en" ? "Tokens claimed successfully!" : "Tokens recebidos com sucesso!";
                 tasksCompleted.followSponsors = false;
                 sponsorsFollowed = 0;
                 followProcessStarted = false;
-                saveTasksState();
                 updateTaskButtons();
                 await updateUI();
             } catch (error) {
@@ -1202,8 +1174,7 @@
                     }
                 }
 
-                const gasLimit = await getGasEstimate({ from: account, to: CONTRACT_ADDRESS, value: valueInWei });
-                const tx = await contract.deposit({ value: valueInWei, gasLimit });
+                const tx = await contract.deposit({ value: valueInWei, gasLimit: 200000 });
                 const receipt = await tx.wait();
 
                 if (isSponsorAmount && receipt.events.some(e => e.event === "NewSponsor")) {
@@ -1242,8 +1213,7 @@
                     modalStatus.textContent = currentLanguage === "en" ? "No sponsor slot found!" : "Nenhum slot de sponsor encontrado!";
                     return;
                 }
-                const gasLimit = await getGasEstimate({ from: account, to: CONTRACT_ADDRESS, data: contract.interface.encodeFunctionData("addSponsor", [position, xProfile]) });
-                const tx = await contract.addSponsor(position, xProfile, { gasLimit });
+                const tx = await contract.addSponsor(position, xProfile, { gasLimit: 200000 });
                 await tx.wait();
                 modalStatus.textContent = currentLanguage === "en" ? "Profile added successfully!" : "Perfil adicionado com sucesso!";
                 closeModal();
@@ -1344,7 +1314,6 @@
             followButtonClicks = 0;
             localStorage.removeItem("walletConnected");
             localStorage.removeItem("lastActive");
-            localStorage.removeItem("tasksCompleted");
             walletInfo.style.display = "none";
             updateTaskButtons();
             checkClaimStatus();
@@ -1360,25 +1329,6 @@
             });
         }
 
-        function loadTasksState() {
-            const savedTasks = localStorage.getItem("tasksCompleted");
-            if (savedTasks) {
-                tasksCompleted = JSON.parse(savedTasks);
-            }
-        }
-
-        function saveTasksState() {
-            localStorage.setItem("tasksCompleted", JSON.stringify(tasksCompleted));
-        }
-
-        function rotateAds() {
-            const adLink = document.getElementById("adLink");
-            const adImage = document.getElementById("adImage");
-            adLink.href = ads[currentAdIndex].url;
-            adImage.src = ads[currentAdIndex].image;
-            currentAdIndex = (currentAdIndex + 1) % ads.length;
-        }
-
         async function checkConnection() {
             if (localStorage.getItem("walletConnected") === "true") {
                 const lastActive = Number(localStorage.getItem("lastActive"));
@@ -1390,15 +1340,77 @@
             }
         }
 
+        document.addEventListener("mousemove", () => {
+            if (account) localStorage.setItem("lastActive", Date.now());
+        });
+        document.addEventListener("keydown", () => {
+            if (account) localStorage.setItem("lastActive", Date.now());
+        });
+
         window.addEventListener("load", async () => {
-            loadTasksState();
             provider = new ethers.providers.JsonRpcProvider(MONAD_TESTNET.rpcUrls[0]);
             contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, provider);
             await checkConnection();
             await updateUI();
             await loadSponsors();
-            rotateAds();
-            setInterval(rotateAds, 5000); // Rotaciona anúncios a cada 5 segundos
+            updateLanguage();
+        });
+
+        const canvas = document.querySelector("canvas");
+        const ctx = canvas.getContext("2d");
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let particlesArray = [];
+        const numberOfParticles = 100;
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 5 + 1;
+                this.speedX = Math.random() * 1 - 0.5;
+                this.speedY = Math.random() * 1 - 0.5;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if (this.size > 0.2) this.size -= 0.1;
+            }
+            draw() {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function init() {
+            for (let i = 0; i < numberOfParticles; i++) {
+                particlesArray.push(new Particle());
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < particlesArray.length; i++) {
+                particlesArray[i].update();
+                particlesArray[i].draw();
+                if (particlesArray[i].size <= 0.2) {
+                    particlesArray.splice(i, 1);
+                    i--;
+                    particlesArray.push(new Particle());
+                }
+            }
+            requestAnimationFrame(animate);
+        }
+
+        init();
+        animate();
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
         });
     </script>
 </body>
