@@ -689,7 +689,7 @@
         const MONAD_TESTNET = {
             chainId: '0x279F', // 10143
             chainName: 'Monad Testnet',
-            rpcUrls: ['https://testnet-rpc.monad.xyz/'],
+            rpcUrls: ['https://testnet-rpc.monad.xyz/', 'https://monad-testnet.drpc.org'],
             nativeCurrency: { name: 'MON', symbol: 'MON', decimals: 18 },
             blockExplorerUrls: ['https://testnet.monadexplorer.com/']
         };
@@ -736,7 +736,10 @@
                 congratulations: "Congratulations!",
                 you_are_a_sponsor: "You are a <span id='sponsorLevel'></span> Sponsor!",
                 enter_x_profile: "Enter your X profile URL",
-                submit: "Submit"
+                submit: "Submit",
+                failed_to_load_ui: "Failed to load UI data.",
+                failed_to_load_sponsors: "Failed to load sponsors.",
+                error_checking_claim: "Error checking claim eligibility."
             },
             pt: {
                 claim_mon_tokens: "Fazer Claim de MON na Testnet Monad",
@@ -779,7 +782,10 @@
                 congratulations: "Parabéns!",
                 you_are_a_sponsor: "Você é um Sponsor <span id='sponsorLevel'></span>!",
                 enter_x_profile: "Digite a URL do seu perfil no X",
-                submit: "Enviar"
+                submit: "Enviar",
+                failed_to_load_ui: "Falha ao carregar dados da interface.",
+                failed_to_load_sponsors: "Falha ao carregar sponsors.",
+                error_checking_claim: "Erro ao verificar elegibilidade para claim."
             }
         };
 
@@ -862,6 +868,58 @@
             };
         });
 
+        // Função para throttlear requisições ao RPC
+        function throttle(fn, wait) {
+            let lastCall = 0;
+            return async function (...args) {
+                const now = Date.now();
+                if (now - lastCall >= wait) {
+                    lastCall = now;
+                    return fn(...args);
+                } else {
+                    await new Promise(resolve => setTimeout(resolve, wait - (now - lastCall)));
+                    lastCall = Date.now();
+                    return fn(...args);
+                }
+            };
+        }
+
+        // Função auxiliar para chamar métodos do contrato com throttle
+        const callContractMethod = throttle(async (method, ...args) => {
+            try {
+                return await contract[method](...args);
+            } catch (error) {
+                console.error(`Error calling ${method}:`, error);
+                throw error;
+            }
+        }, 1000); // 1 segundo de intervalo
+
+        // Função para estimar gás dinamicamente
+        async function estimateGas(method, args = [], options = {}) {
+            try {
+                const gasEstimate = await contract.estimateGas[method](...args, options);
+                return gasEstimate.mul(12).div(10); // Aumenta 20% para segurança
+            } catch (error) {
+                console.error(`Gas estimation failed for ${method}:`, error);
+                return ethers.BigNumber.from("200000"); // Fallback caso falhe
+            }
+        }
+
+        // Função para alternar entre RPCs em caso de falha
+        async function getProvider() {
+            const rpcUrls = MONAD_TESTNET.rpcUrls;
+            for (const url of rpcUrls) {
+                try {
+                    const tempProvider = new ethers.providers.JsonRpcProvider(url);
+                    await tempProvider.getBlockNumber(); // Testa a conexão
+                    return tempProvider;
+                } catch (error) {
+                    console.warn(`RPC ${url} falhou:`, error);
+                }
+            }
+            throw new Error("Todos os RPCs falharam.");
+        }
+
         function updateLanguage() {
             document.querySelectorAll("[data-i18n]").forEach(el => {
                 const key = el.dataset.i18n;
@@ -875,7 +933,7 @@
 
         async function connectWallet() {
             if (!window.ethereum) {
-                status.textContent = currentLanguage === "en" ? "Please install MetaMask!" : "Por favor, instale o MetaMask!";
+                status.textContent = translations[currentLanguage].install_metamask || "Please install MetaMask!";
                 return;
             }
             try {
@@ -898,13 +956,13 @@
                 updateTaskButtons();
                 await updateUI();
                 await loadSponsors();
-                status.textContent = currentLanguage === "en" ? "Wallet connected successfully!" : "Carteira conectada com sucesso!";
+                status.textContent = translations[currentLanguage].wallet_connected || "Wallet connected successfully!";
                 
                 window.ethereum.on('accountsChanged', () => location.reload());
                 window.ethereum.on('chainChanged', () => location.reload());
             } catch (error) {
                 console.error("Connect wallet error:", error);
-                status.textContent = currentLanguage === "en" ? "Failed to connect wallet. Please try again." : "Falha ao conectar carteira. Tente novamente.";
+                status.textContent = translations[currentLanguage].failed_to_connect || "Failed to connect wallet. Please try again.";
             }
         }
 
@@ -925,19 +983,18 @@
                 followSponsorsText.textContent = translations[currentLanguage].claim_released;
                 followSpinner.style.display = "none";
             } else if (followProcessStarted) {
-                followSponsorsText.textContent = `${currentLanguage === "en" ? "Followed" : "Seguiu"} ${sponsorsFollowed}/${totalActiveSponsors}`;
+                followSponsorsText.textContent = `${translations[currentLanguage].followed || "Followed"} ${sponsorsFollowed}/${totalActiveSponsors}`;
                 followSpinner.style.display = "block";
             } else {
                 followSponsorsText.textContent = translations[currentLanguage].follow_sponsors;
                 followSpinner.style.display = "none";
             }
         }
-
         async function followTwitter() {
             window.open("https://x.com/_roneslira", "_blank");
             modalOverlay.style.display = "block";
             confirmationModal.style.display = "block";
-            modalMessage.textContent = currentLanguage === "en" ? "Did you follow @_roneslira on X?" : "Você seguiu @_roneslira no X?";
+            modalMessage.textContent = translations[currentLanguage].did_you_follow || "Did you follow @_roneslira on X?";
             document.getElementById("confirm-yes").onclick = () => {
                 tasksCompleted.followTwitter = true;
                 updateTaskButtons();
@@ -951,7 +1008,7 @@
             window.open("https://x.com/_roneslira/status/1900013122238169182", "_blank");
             modalOverlay.style.display = "block";
             confirmationModal.style.display = "block";
-            modalMessage.textContent = currentLanguage === "en" ? "Did you like the post on X?" : "Você curtiu o post no X?";
+            modalMessage.textContent = translations[currentLanguage].did_you_like || "Did you like the post on X?";
             document.getElementById("confirm-yes").onclick = () => {
                 tasksCompleted.likePost = true;
                 updateTaskButtons();
@@ -963,12 +1020,12 @@
 
         async function startFollowSponsors() {
             if (!tasksCompleted.connectWallet) {
-                status.textContent = currentLanguage === "en" ? "Please connect your wallet first!" : "Por favor, conecte sua carteira primeiro!";
+                status.textContent = translations[currentLanguage].connect_wallet_first || "Please connect your wallet first!";
                 return;
             }
             followButtonClicks++;
             try {
-                const sponsors = await contract.getActiveSponsors();
+                const sponsors = await callContractMethod("getActiveSponsors");
                 const activeSponsors = sponsors.filter(s => s.donor !== "0x0000000000000000000000000000000000000000" && s.xProfile !== "");
                 totalActiveSponsors = activeSponsors.length;
 
@@ -976,19 +1033,19 @@
                     tasksCompleted.followSponsors = true;
                     updateTaskButtons();
                     checkClaimStatus();
-                    status.textContent = currentLanguage === "en" ? "No sponsors to follow!" : "Nenhum sponsor para seguir!";
+                    status.textContent = translations[currentLanguage].no_sponsors || "No sponsors to follow!";
                     return;
                 }
 
                 if (!followProcessStarted) {
                     followProcessStarted = true;
-                    status.textContent = currentLanguage === "en" ? "Follow the sponsors" : "Siga os sponsors";
+                    status.textContent = translations[currentLanguage].follow_the_sponsors || "Follow the sponsors";
                     document.querySelectorAll(".sponsor-item button").forEach(btn => {
                         if (btn.textContent === translations[currentLanguage].follow) btn.classList.add("pulse");
                     });
                     updateFollowSponsorsButton();
                 } else if (followButtonClicks > 1 && !tasksCompleted.followSponsors) {
-                    status.textContent = currentLanguage === "en" ? "Follow the active sponsors in the left column!" : "Siga os sponsors ativos na coluna esquerda!";
+                    status.textContent = translations[currentLanguage].follow_active_sponsors || "Follow the active sponsors in the left column!";
                     const activeItems = document.querySelectorAll(".sponsor-item .badge.active");
                     activeItems.forEach(badge => {
                         const sponsorItem = badge.closest(".sponsor-item");
@@ -999,7 +1056,7 @@
                 }
             } catch (error) {
                 console.error("Start follow sponsors error:", error);
-                status.textContent = currentLanguage === "en" ? "Failed to load sponsors." : "Falha ao carregar sponsors.";
+                status.textContent = translations[currentLanguage].failed_to_load_sponsors || "Failed to load sponsors.";
             }
         }
 
@@ -1008,7 +1065,7 @@
             setTimeout(() => {
                 modalOverlay.style.display = "block";
                 confirmationModal.style.display = "block";
-                modalMessage.textContent = currentLanguage === "en" ? "Did you follow this sponsor on X?" : "Você seguiu este sponsor no X?";
+                modalMessage.textContent = translations[currentLanguage].did_you_follow_sponsor || "Did you follow this sponsor on X?";
                 document.getElementById("confirm-yes").onclick = () => {
                     sponsorsFollowed++;
                     if (sponsorsFollowed >= totalActiveSponsors) {
@@ -1036,18 +1093,18 @@
 
         async function updateUI() {
             try {
-                const balance = await contract.getBalance();
-                const claimAmt = await contract.claimAmount();
+                const balance = await callContractMethod("getBalance");
+                const claimAmt = await callContractMethod("claimAmount");
                 available.textContent = ethers.utils.formatEther(balance) + " MON";
                 claimAmountEl.textContent = ethers.utils.formatEther(claimAmt) + " MON";
                 if (account) {
-                    const last = await contract.lastClaim(account);
-                    lastClaim.textContent = last > 0 ? new Date(last * 1000).toLocaleString() : currentLanguage === "en" ? "None" : "Nenhum";
+                    const last = await callContractMethod("lastClaim", account);
+                    lastClaim.textContent = last > 0 ? new Date(last * 1000).toLocaleString() : translations[currentLanguage].none || "None";
                 }
                 checkClaimStatus();
             } catch (error) {
                 console.error("Update UI error:", error);
-                status.textContent = currentLanguage === "en" ? "Failed to load UI data." : "Falha ao carregar dados da interface.";
+                status.textContent = translations[currentLanguage].failed_to_load_ui;
             }
         }
 
@@ -1055,26 +1112,26 @@
             if (!account) {
                 claimButton.disabled = true;
                 claimButton.classList.remove("enabled");
-                status.textContent = currentLanguage === "en" ? "Connect your wallet to start." : "Conecte sua carteira para começar.";
+                status.textContent = translations[currentLanguage].connect_wallet_to_start || "Connect your wallet to start.";
                 return;
             }
             try {
-                const last = Number(await contract.lastClaim(account));
-                const cooldown = Number(await contract.cooldownPeriod());
-                const paused = await contract.paused();
-                const now = Math.floor(Date.now() / 1000);
-                const sponsors = await contract.getActiveSponsors();
+                const last = Number(await callContractMethod("lastClaim", account));
+                const cooldown = Number(await callContractMethod("cooldownPeriod"));
+                const paused = await callContractMethod("paused");
+                const sponsors = await callContractMethod("getActiveSponsors");
                 const hasActiveSponsors = sponsors.some(s => s.donor !== "0x0000000000000000000000000000000000000000" && s.xProfile !== "");
 
+                const now = Math.floor(Date.now() / 1000);
                 if (paused) {
                     claimButton.disabled = true;
                     claimButton.classList.remove("enabled");
-                    status.textContent = currentLanguage === "en" ? "Claims are currently paused." : "Claims estão pausados no momento.";
+                    status.textContent = translations[currentLanguage].claims_paused || "Claims are currently paused.";
                 } else if (now < last + cooldown) {
                     claimButton.disabled = true;
                     claimButton.classList.remove("enabled");
                     const timeLeft = last + cooldown - now;
-                    status.textContent = currentLanguage === "en" ? `Cooldown active. Wait ${formatTime(timeLeft)}.` : `Cooldown ativo. Aguarde ${formatTime(timeLeft)}.`;
+                    status.textContent = translations[currentLanguage].cooldown_active?.replace("${time}", formatTime(timeLeft)) || `Cooldown active. Wait ${formatTime(timeLeft)}.`;
                     startCooldownCountdown(last, cooldown);
                 } else if (!tasksCompleted.followTwitter || !tasksCompleted.likePost || (hasActiveSponsors && !tasksCompleted.followSponsors)) {
                     claimButton.disabled = true;
@@ -1083,11 +1140,11 @@
                 } else {
                     claimButton.disabled = false;
                     claimButton.classList.add("enabled");
-                    status.textContent = currentLanguage === "en" ? "Ready to claim your tokens!" : "Pronto para fazer claim dos seus tokens!";
+                    status.textContent = translations[currentLanguage].ready_to_claim || "Ready to claim your tokens!";
                 }
             } catch (error) {
                 console.error("Check claim status error:", error);
-                status.textContent = currentLanguage === "en" ? "Error checking claim eligibility." : "Erro ao verificar elegibilidade para claim.";
+                status.textContent = translations[currentLanguage].error_checking_claim;
             }
         }
 
@@ -1098,7 +1155,7 @@
                 const now = Math.floor(Date.now() / 1000);
                 const remaining = endTime - now;
                 if (remaining > 0) {
-                    claimButton.querySelector("span").textContent = currentLanguage === "en" ? `Next claim in ${formatTime(remaining)}` : `Próximo claim em ${formatTime(remaining)}`;
+                    claimButton.querySelector("span").textContent = translations[currentLanguage].next_claim?.replace("${time}", formatTime(remaining)) || `Next claim in ${formatTime(remaining)}`;
                     setTimeout(updateTimer, 1000);
                 } else {
                     claimButton.querySelector("span").textContent = translations[currentLanguage].claim_tokens;
@@ -1110,16 +1167,17 @@
 
         async function claimTokens() {
             if (!tasksCompleted.connectWallet || !tasksCompleted.followTwitter || !tasksCompleted.likePost || !tasksCompleted.followSponsors) {
-                status.textContent = currentLanguage === "en" ? "Complete all required tasks first!" : "Complete todas as tarefas primeiro!";
+                status.textContent = translations[currentLanguage].complete_tasks_first || "Complete all required tasks first!";
                 return;
             }
             try {
                 claimButton.disabled = true;
                 claimSpinner.style.display = "block";
-                status.textContent = currentLanguage === "en" ? "Claiming tokens..." : "Fazendo claim dos tokens...";
-                const tx = await contract.claim({ gasLimit: 200000 });
+                status.textContent = translations[currentLanguage].claiming_tokens || "Claiming tokens...";
+                const gasLimit = await estimateGas("claim");
+                const tx = await contract.claim({ gasLimit });
                 await tx.wait();
-                status.textContent = currentLanguage === "en" ? "Tokens claimed successfully!" : "Tokens recebidos com sucesso!";
+                status.textContent = translations[currentLanguage].tokens_claimed || "Tokens claimed successfully!";
                 tasksCompleted.followSponsors = false;
                 sponsorsFollowed = 0;
                 followProcessStarted = false;
@@ -1127,7 +1185,7 @@
                 await updateUI();
             } catch (error) {
                 console.error("Claim error:", error);
-                status.textContent = error.reason || (currentLanguage === "en" ? "Failed to claim tokens." : "Falha ao fazer claim dos tokens.");
+                status.textContent = error.reason || translations[currentLanguage].failed_to_claim || "Failed to claim tokens.";
             } finally {
                 claimButton.disabled = false;
                 claimSpinner.style.display = "none";
@@ -1136,21 +1194,21 @@
 
         async function donate() {
             if (!account) {
-                status.textContent = currentLanguage === "en" ? "Please connect your wallet first!" : "Por favor, conecte sua carteira primeiro!";
+                status.textContent = translations[currentLanguage].connect_wallet_first || "Please connect your wallet first!";
                 return;
             }
             const amount = donateAmount.value.trim();
             if (!amount || parseFloat(amount) <= 0) {
-                status.textContent = currentLanguage === "en" ? "Enter a valid donation amount!" : "Digite um valor válido para doação!";
+                status.textContent = translations[currentLanguage].invalid_amount || "Enter a valid donation amount!";
                 return;
             }
             try {
                 donateButton.disabled = true;
                 donateSpinner.style.display = "block";
-                status.textContent = currentLanguage === "en" ? "Processing donation..." : "Processando doação...";
-                const paused = await contract.paused();
+                status.textContent = translations[currentLanguage].processing_donation || "Processing donation...";
+                const paused = await callContractMethod("paused");
                 if (paused) {
-                    status.textContent = currentLanguage === "en" ? "Donations are currently paused." : "Doações estão pausadas no momento.";
+                    status.textContent = translations[currentLanguage].donations_paused || "Donations are currently paused.";
                     return;
                 }
 
@@ -1162,19 +1220,20 @@
                     let slotAvailable = false;
                     let availableSlot = -1;
                     for (let i = 0; i < 5; i++) {
-                        if (await contract.isSponsorSlotAvailable(i)) {
+                        if (await callContractMethod("isSponsorSlotAvailable", i)) {
                             slotAvailable = true;
                             availableSlot = i;
                             break;
                         }
                     }
                     if (!slotAvailable) {
-                        status.textContent = currentLanguage === "en" ? "All sponsor slots are full!" : "Todos os slots de sponsor estão cheios!";
+                        status.textContent = translations[currentLanguage].slots_full || "All sponsor slots are full!";
                         return;
                     }
                 }
 
-                const tx = await contract.deposit({ value: valueInWei, gasLimit: 200000 });
+                const gasLimit = await estimateGas("deposit", [], { value: valueInWei });
+                const tx = await contract.deposit({ value: valueInWei, gasLimit });
                 const receipt = await tx.wait();
 
                 if (isSponsorAmount && receipt.events.some(e => e.event === "NewSponsor")) {
@@ -1184,13 +1243,13 @@
                     sponsorModal.style.display = "block";
                     modalOverlay.style.display = "block";
                 } else {
-                    status.textContent = currentLanguage === "en" ? "Thank you for your donation!" : "Obrigado pela sua doação!";
+                    status.textContent = translations[currentLanguage].thank_you || "Thank you for your donation!";
                 }
                 await updateUI();
                 await loadSponsors();
             } catch (error) {
                 console.error("Donate error:", error);
-                status.textContent = error.reason || (currentLanguage === "en" ? "Donation failed." : "Doação falhou.");
+                status.textContent = error.reason || translations[currentLanguage].donation_failed || "Donation failed.";
             } finally {
                 donateButton.disabled = false;
                 donateSpinner.style.display = "none";
@@ -1200,27 +1259,28 @@
         async function submitSponsorProfile() {
             const xProfile = xProfileInput.value.trim();
             if (!xProfile.startsWith("https://x.com/")) {
-                modalStatus.textContent = currentLanguage === "en" ? "Enter a valid X profile URL!" : "Digite uma URL válida do X!";
+                modalStatus.textContent = translations[currentLanguage].invalid_x_profile || "Enter a valid X profile URL!";
                 return;
             }
             try {
                 submitXProfile.disabled = true;
                 submitSpinner.style.display = "block";
-                modalStatus.textContent = currentLanguage === "en" ? "Submitting profile..." : "Enviando perfil...";
-                const sponsors = await contract.getActiveSponsors();
+                modalStatus.textContent = translations[currentLanguage].submitting_profile || "Submitting profile...";
+                const sponsors = await callContractMethod("getActiveSponsors");
                 const position = sponsors.findIndex(s => s.donor.toLowerCase() === account.toLowerCase() && s.xProfile === "");
                 if (position === -1) {
-                    modalStatus.textContent = currentLanguage === "en" ? "No sponsor slot found!" : "Nenhum slot de sponsor encontrado!";
+                    modalStatus.textContent = translations[currentLanguage].no_sponsor_slot || "No sponsor slot found!";
                     return;
                 }
-                const tx = await contract.addSponsor(position, xProfile, { gasLimit: 200000 });
+                const gasLimit = await estimateGas("addSponsor", [position, xProfile]);
+                const tx = await contract.addSponsor(position, xProfile, { gasLimit });
                 await tx.wait();
-                modalStatus.textContent = currentLanguage === "en" ? "Profile added successfully!" : "Perfil adicionado com sucesso!";
+                modalStatus.textContent = translations[currentLanguage].profile_added || "Profile added successfully!";
                 closeModal();
                 await loadSponsors();
             } catch (error) {
                 console.error("Submit sponsor profile error:", error);
-                modalStatus.textContent = error.reason || (currentLanguage === "en" ? "Failed to submit profile." : "Falha ao enviar perfil.");
+                modalStatus.textContent = error.reason || translations[currentLanguage].failed_to_submit || "Failed to submit profile.";
             } finally {
                 submitXProfile.disabled = false;
                 submitSpinner.style.display = "none";
@@ -1229,7 +1289,7 @@
 
         async function loadSponsors() {
             try {
-                const sponsors = await contract.getActiveSponsors();
+                const sponsors = await callContractMethod("getActiveSponsors");
                 const sponsorClasses = ["sponsor-diamond", "sponsor-gold", "sponsor-silver", "sponsor-bronze", "sponsor-copper"];
                 const sponsorLevels = ["Diamond", "Gold", "Silver", "Bronze", "Copper"];
                 const sponsorIcons = ["fa-gem", "fa-trophy", "fa-medal", "fa-award", "fa-coins"];
@@ -1263,7 +1323,7 @@
                                     <button onclick="handleSponsorFollow('${sponsor.xProfile}')" data-i18n="follow">Seguir</button>
                                 </div>
                                 <p><i class="fas fa-coins"></i> ${ethers.utils.formatEther(sponsor.amount)} MON</p>
-                                <p><i class="fas fa-clock"></i> ${currentLanguage === "en" ? "Time left" : "Tempo restante"}: <span id="timer-${i}">${formatTime(timeLeft)}</span></p>
+                                <p><i class="fas fa-clock"></i> ${translations[currentLanguage].time_left || "Time left"}: <span id="timer-${i}">${formatTime(timeLeft)}</span></p>
                                 <div class="progress-bar"><div class="progress" id="progress-${i}" style="width: ${progressPercentage}%"></div></div>
                             </div>`;
                         if (timeLeft > 0) startTimer(i, timeLeft, duration);
@@ -1272,7 +1332,7 @@
                 sponsorsList.innerHTML += `<button class="sponsor-info-button" onclick="document.getElementById('sponsor-info-modal').style.display = 'block'; document.getElementById('modal-overlay').style.display = 'block';" data-i18n="how_sponsors_work_title">Como Funcionam os Sponsors</button>`;
             } catch (error) {
                 console.error("Load sponsors error:", error);
-                sponsorsList.innerHTML = `<p>${currentLanguage === "en" ? "Failed to load sponsors." : "Falha ao carregar sponsors."}</p>`;
+                sponsorsList.innerHTML = `<p>${translations[currentLanguage].failed_to_load_sponsors}</p>`;
             }
         }
 
@@ -1294,7 +1354,7 @@
         }
 
         function formatTime(seconds) {
-            if (seconds <= 0) return currentLanguage === "en" ? "Expired" : "Expirado";
+            if (seconds <= 0) return translations[currentLanguage].expired || "Expired";
             const days = Math.floor(seconds / 86400);
             const hours = Math.floor((seconds % 86400) / 3600);
             const minutes = Math.floor((seconds % 3600) / 60);
@@ -1317,15 +1377,15 @@
             walletInfo.style.display = "none";
             updateTaskButtons();
             checkClaimStatus();
-            status.textContent = currentLanguage === "en" ? "Wallet disconnected." : "Carteira desconectada.";
+            status.textContent = translations[currentLanguage].wallet_disconnected || "Wallet disconnected.";
         }
 
         function copyAddress() {
             navigator.clipboard.writeText(account).then(() => {
-                status.textContent = currentLanguage === "en" ? "Address copied to clipboard!" : "Endereço copiado para a área de transferência!";
+                status.textContent = translations[currentLanguage].address_copied || "Address copied to clipboard!";
                 setTimeout(() => status.textContent = "", 2000);
             }).catch(() => {
-                status.textContent = currentLanguage === "en" ? "Failed to copy address." : "Falha ao copiar endereço.";
+                status.textContent = translations[currentLanguage].failed_to_copy || "Failed to copy address.";
             });
         }
 
@@ -1348,7 +1408,7 @@
         });
 
         window.addEventListener("load", async () => {
-            provider = new ethers.providers.JsonRpcProvider(MONAD_TESTNET.rpcUrls[0]);
+            provider = await getProvider();
             contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, provider);
             await checkConnection();
             await updateUI();
