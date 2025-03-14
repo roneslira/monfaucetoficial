@@ -326,6 +326,58 @@
             top: 50%;
             transform: translateY(-50%);
         }
+        .leaderboard-container {
+            position: absolute;
+            right: calc(50% - 580px);
+            top: 50%;
+            transform: translateY(-50%);
+            width: 22rem;
+            text-align: center;
+            z-index: 10;
+        }
+        .leaderboard-toggle {
+            background: var(--box-background);
+            border: 1px solid var(--box-border);
+            border-radius: 0.75rem 0.75rem 0 0;
+            padding: 0.5rem;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            color: var(--text-color);
+            transition: background 0.3s ease;
+        }
+        .leaderboard-toggle:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+        .leaderboard-content {
+            display: none;
+            background: var(--box-background);
+            border: 1px solid var(--box-border);
+            border-top: none;
+            border-radius: 0 0 1rem 1rem;
+            padding: 1rem;
+            box-shadow: 0 10px 20px var(--shadow-color);
+            backdrop-filter: blur(10px);
+            max-height: 450px;
+            overflow-y: auto;
+        }
+        .leaderboard-content h3 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .leaderboard-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem;
+            margin-bottom: 0.3rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 0.5rem;
+            font-size: 0.9rem;
+        }
         .sponsor-item {
             width: 100%;
             padding: 0.4rem;
@@ -494,7 +546,7 @@
             transform: scale(1.2);
         }
         @media (max-width: 1024px) { 
-            .ad-container, .sponsors-container { 
+            .ad-container, .sponsors-container, .leaderboard-container { 
                 display: none; 
             } 
         }
@@ -506,6 +558,7 @@
             .donate-container { max-width: 90%; }
             .sponsors-container { left: calc(50% - 300px); }
             .ad-container { right: calc(50% - 300px); }
+            .leaderboard-container { right: calc(50% - 300px); }
         }
     </style>
 </head>
@@ -552,12 +605,12 @@
                     </div>
                     <i class="fas fa-arrow-right arrow"></i>
                 </button>
-                <button class="task-button" id="followSponsorsButton" disabled>
+                <button class="task-button" id="dynamicTaskButton">
                     <div class="flex items-center gap-3">
                         <i class="fab fa-twitter icon"></i>
-                        <span id="followSponsorsText" data-i18n="follow_sponsors">Seguir Sponsors</span>
+                        <span id="dynamicTaskText" data-i18n="follow_sponsors">Seguir Sponsors</span>
                     </div>
-                    <div class="spinner" id="followSpinner"></div>
+                    <div class="spinner" id="dynamicSpinner"></div>
                     <i class="fas fa-arrow-right arrow"></i>
                 </button>
             </div>
@@ -579,6 +632,13 @@
                 <span data-i18n="donate">Doar</span>
                 <div class="spinner" id="donateSpinner"></div>
             </button>
+        </div>
+        <div class="leaderboard-container">
+            <div class="leaderboard-toggle" id="leaderboardToggle" data-i18n="leaderboard">Leaderboard</div>
+            <div class="leaderboard-content" id="leaderboardContent">
+                <h3 data-i18n="top_claimers">Top 10 Reclamantes</h3>
+                <div id="leaderboardList"></div>
+            </div>
         </div>
         <div class="ad-container">
             <a href="https://airdropsmanager.com/" target="_blank">
@@ -701,6 +761,7 @@
                 follow_on_x: "Follow on X",
                 like_post: "Like Post",
                 follow_sponsors: "Follow Sponsors",
+                share_on_x: "Share on X",
                 claim_tokens: "Claim Tokens",
                 available: "Available",
                 claim_amount: "Claim Amount",
@@ -708,6 +769,8 @@
                 last_claim: "Last Claim",
                 donate: "Donate",
                 sponsors: "Sponsors",
+                leaderboard: "Leaderboard",
+                top_claimers: "Top 10 Claimers",
                 about: "About",
                 contact: "Contact",
                 terms: "Terms",
@@ -744,6 +807,7 @@
                 follow_on_x: "Seguir no X",
                 like_post: "Curtir Post",
                 follow_sponsors: "Seguir Sponsors",
+                share_on_x: "Compartilhar no X",
                 claim_tokens: "Fazer Claim",
                 available: "Disponível",
                 claim_amount: "Valor do Claim",
@@ -751,6 +815,8 @@
                 last_claim: "Último Claim",
                 donate: "Doar",
                 sponsors: "Sponsors",
+                leaderboard: "Leaderboard",
+                top_claimers: "Top 10 Reclamantes",
                 about: "Sobre",
                 contact: "Contato",
                 terms: "Termos",
@@ -795,9 +861,9 @@
         const connectWalletButton = document.getElementById("connectWalletButton");
         const followTwitterButton = document.getElementById("followTwitterButton");
         const likePostButton = document.getElementById("likePostButton");
-        const followSponsorsButton = document.getElementById("followSponsorsButton");
-        const followSponsorsText = document.getElementById("followSponsorsText");
-        const followSpinner = document.getElementById("followSpinner");
+        const dynamicTaskButton = document.getElementById("dynamicTaskButton");
+        const dynamicTaskText = document.getElementById("dynamicTaskText");
+        const dynamicSpinner = document.getElementById("dynamicSpinner");
         const claimButton = document.getElementById("claimButton");
         const claimSpinner = document.getElementById("claimSpinner");
         const disconnectWallet = document.getElementById("disconnectWallet");
@@ -823,6 +889,9 @@
         const closeSponsorInfo = document.getElementById("close-sponsor-info");
         const modalStatus = document.getElementById("modalStatus");
         const sponsorsList = document.getElementById("sponsors-list");
+        const leaderboardToggle = document.getElementById("leaderboardToggle");
+        const leaderboardContent = document.getElementById("leaderboardContent");
+        const leaderboardList = document.getElementById("leaderboardList");
         const aboutModal = document.getElementById("about-modal");
         const contactModal = document.getElementById("contact-modal");
         const termsModal = document.getElementById("terms-modal");
@@ -836,13 +905,16 @@
         connectWalletButton.onclick = connectWallet;
         followTwitterButton.onclick = followTwitter;
         likePostButton.onclick = likePost;
-        followSponsorsButton.onclick = startFollowSponsors;
+        dynamicTaskButton.onclick = handleDynamicTask;
         claimButton.onclick = claimTokens;
         disconnectWallet.onclick = disconnect;
         copyWallet.onclick = copyAddress;
         donateButton.onclick = donate;
         submitXProfile.onclick = submitSponsorProfile;
         closeSponsorInfo.onclick = closeModal;
+        leaderboardToggle.onclick = () => {
+            leaderboardContent.style.display = leaderboardContent.style.display === "block" ? "none" : "block";
+        };
         aboutLink.onclick = () => { modalOverlay.style.display = "block"; aboutModal.style.display = "block"; };
         contactLink.onclick = () => { modalOverlay.style.display = "block"; contactModal.style.display = "block"; };
         termsLink.onclick = () => { modalOverlay.style.display = "block"; termsModal.style.display = "block"; };
@@ -898,6 +970,7 @@
                 updateTaskButtons();
                 await updateUI();
                 await loadSponsors();
+                await loadLeaderboard();
                 status.textContent = currentLanguage === "en" ? "Wallet connected successfully!" : "Carteira conectada com sucesso!";
                 
                 window.ethereum.on('accountsChanged', () => location.reload());
@@ -908,28 +981,36 @@
             }
         }
 
-        function updateTaskButtons() {
+        async function updateTaskButtons() {
             connectWalletButton.disabled = tasksCompleted.connectWallet;
             followTwitterButton.disabled = tasksCompleted.followTwitter;
             likePostButton.disabled = tasksCompleted.likePost;
-            followSponsorsButton.disabled = !tasksCompleted.connectWallet || tasksCompleted.followSponsors;
-            connectWalletButton.style.opacity = tasksCompleted.connectWallet ? "0.5" : "1";
-            followTwitterButton.style.opacity = tasksCompleted.followTwitter ? "0.5" : "1";
-            likePostButton.style.opacity = tasksCompleted.likePost ? "0.5" : "1";
-            followSponsorsButton.style.opacity = tasksCompleted.followSponsors ? "0.5" : "1";
-            updateFollowSponsorsButton();
+
+            const sponsors = await contract.getActiveSponsors();
+            const hasActiveSponsors = sponsors.some(s => s.donor !== "0x0000000000000000000000000000000000000000" && s.xProfile !== "");
+            if (hasActiveSponsors) {
+                dynamicTaskText.textContent = translations[currentLanguage].follow_sponsors;
+                dynamicTaskButton.disabled = !tasksCompleted.connectWallet || tasksCompleted.followSponsors;
+                dynamicTaskButton.style.opacity = tasksCompleted.followSponsors ? "0.5" : "1";
+                updateDynamicTaskButton();
+            } else {
+                dynamicTaskText.textContent = translations[currentLanguage].share_on_x;
+                dynamicTaskButton.disabled = !tasksCompleted.connectWallet || tasksCompleted.followSponsors;
+                dynamicTaskButton.style.opacity = tasksCompleted.followSponsors ? "0.5" : "1";
+                dynamicSpinner.style.display = "none";
+            }
         }
 
-        function updateFollowSponsorsButton() {
+        function updateDynamicTaskButton() {
             if (tasksCompleted.followSponsors) {
-                followSponsorsText.textContent = translations[currentLanguage].claim_released;
-                followSpinner.style.display = "none";
+                dynamicTaskText.textContent = translations[currentLanguage].claim_released;
+                dynamicSpinner.style.display = "none";
             } else if (followProcessStarted) {
-                followSponsorsText.textContent = `${currentLanguage === "en" ? "Followed" : "Seguiu"} ${sponsorsFollowed}/${totalActiveSponsors}`;
-                followSpinner.style.display = "block";
+                dynamicTaskText.textContent = `${currentLanguage === "en" ? "Followed" : "Seguiu"} ${sponsorsFollowed}/${totalActiveSponsors}`;
+                dynamicSpinner.style.display = "block";
             } else {
-                followSponsorsText.textContent = translations[currentLanguage].follow_sponsors;
-                followSpinner.style.display = "none";
+                dynamicTaskText.textContent = translations[currentLanguage].follow_sponsors;
+                dynamicSpinner.style.display = "none";
             }
         }
 
@@ -961,6 +1042,16 @@
             document.getElementById("confirm-no").onclick = closeModal;
         }
 
+        async function handleDynamicTask() {
+            const sponsors = await contract.getActiveSponsors();
+            const hasActiveSponsors = sponsors.some(s => s.donor !== "0x0000000000000000000000000000000000000000" && s.xProfile !== "");
+            if (hasActiveSponsors) {
+                startFollowSponsors();
+            } else {
+                shareOnX();
+            }
+        }
+
         async function startFollowSponsors() {
             if (!tasksCompleted.connectWallet) {
                 status.textContent = currentLanguage === "en" ? "Please connect your wallet first!" : "Por favor, conecte sua carteira primeiro!";
@@ -986,7 +1077,7 @@
                     document.querySelectorAll(".sponsor-item button").forEach(btn => {
                         if (btn.textContent === translations[currentLanguage].follow) btn.classList.add("pulse");
                     });
-                    updateFollowSponsorsButton();
+                    updateDynamicTaskButton();
                 } else if (followButtonClicks > 1 && !tasksCompleted.followSponsors) {
                     status.textContent = currentLanguage === "en" ? "Follow the active sponsors in the left column!" : "Siga os sponsors ativos na coluna esquerda!";
                     const activeItems = document.querySelectorAll(".sponsor-item .badge.active");
@@ -1001,6 +1092,21 @@
                 console.error("Start follow sponsors error:", error);
                 status.textContent = currentLanguage === "en" ? "Failed to load sponsors." : "Falha ao carregar sponsors.";
             }
+        }
+
+        async function shareOnX() {
+            const tweetText = encodeURIComponent(`Acabei de fazer claim no MonFaucet! Testando a Monad Testnet. #MonFaucet #MonadTestnet`);
+            window.open(`https://x.com/intent/tweet?text=${tweetText}`, "_blank");
+            modalOverlay.style.display = "block";
+            confirmationModal.style.display = "block";
+            modalMessage.textContent = currentLanguage === "en" ? "Did you share the tweet on X?" : "Você compartilhou o tweet no X?";
+            document.getElementById("confirm-yes").onclick = () => {
+                tasksCompleted.followSponsors = true;
+                updateTaskButtons();
+                checkClaimStatus();
+                closeModal();
+            };
+            document.getElementById("confirm-no").onclick = closeModal;
         }
 
         function handleSponsorFollow(url) {
@@ -1076,7 +1182,7 @@
                     const timeLeft = last + cooldown - now;
                     status.textContent = currentLanguage === "en" ? `Cooldown active. Wait ${formatTime(timeLeft)}.` : `Cooldown ativo. Aguarde ${formatTime(timeLeft)}.`;
                     startCooldownCountdown(last, cooldown);
-                } else if (!tasksCompleted.followTwitter || !tasksCompleted.likePost || (hasActiveSponsors && !tasksCompleted.followSponsors)) {
+                } else if (!tasksCompleted.followTwitter || !tasksCompleted.likePost || !tasksCompleted.followSponsors) {
                     claimButton.disabled = true;
                     claimButton.classList.remove("enabled");
                     status.textContent = translations[currentLanguage].complete_all_tasks;
@@ -1125,6 +1231,7 @@
                 followProcessStarted = false;
                 updateTaskButtons();
                 await updateUI();
+                await loadLeaderboard();
             } catch (error) {
                 console.error("Claim error:", error);
                 status.textContent = error.reason || (currentLanguage === "en" ? "Failed to claim tokens." : "Falha ao fazer claim dos tokens.");
@@ -1276,6 +1383,31 @@
             }
         }
 
+        async function loadLeaderboard() {
+            try {
+                const claims = await contract.queryFilter("Claimed", 0, "latest");
+                const claimCounts = {};
+                claims.forEach(event => {
+                    const user = event.args.user;
+                    claimCounts[user] = (claimCounts[user] || 0) + 1;
+                });
+
+                const sortedUsers = Object.entries(claimCounts)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 10);
+
+                leaderboardList.innerHTML = sortedUsers.map(([user, count], index) => `
+                    <div class="leaderboard-item">
+                        <span>#${index + 1} ${user.slice(0, 6)}...${user.slice(-4)}</span>
+                        <span>${count} ${currentLanguage === "en" ? "claims" : "claims"}</span>
+                    </div>
+                `).join("");
+            } catch (error) {
+                console.error("Load leaderboard error:", error);
+                leaderboardList.innerHTML = `<p>${currentLanguage === "en" ? "Failed to load leaderboard." : "Falha ao carregar leaderboard."}</p>`;
+            }
+        }
+
         function startTimer(index, timeLeft, duration) {
             const timerSpan = document.getElementById(`timer-${index}`);
             const progressBar = document.getElementById(`progress-${index}`);
@@ -1353,6 +1485,7 @@
             await checkConnection();
             await updateUI();
             await loadSponsors();
+            await loadLeaderboard();
             updateLanguage();
         });
 
