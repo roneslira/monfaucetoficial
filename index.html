@@ -122,7 +122,14 @@
             padding: 1rem;
             margin-bottom: 1.2rem;
         }
-        .info-box div { display: flex; justify-content: space-between; margin-bottom: 0.5rem; }
+        .info-box div { 
+            display: flex; 
+            justify-content: space-between; 
+            margin-bottom: 0.5rem; 
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+        }
         .task-button, .claim-button {
             width: 100%;
             display: flex;
@@ -139,6 +146,9 @@
             transition: all 0.4s ease-in-out;
             cursor: pointer;
             position: relative;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         .task-button:hover, .claim-button:hover {
             transform: scale(1.05);
@@ -466,21 +476,6 @@
         .badge.active { background: #00ff00; }
         .badge.inactive { background: #808080; }
         .ad-image { width: 100%; height: auto; border-radius: 0.5rem; margin: 0; padding: 0; }
-        .tooltip {
-            position: absolute;
-            background: rgba(0, 0, 0, 0.8);
-            color: var(--text-color);
-            padding: 0.5rem;
-            border-radius: 0.5rem;
-            font-size: 0.9rem;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.2s ease;
-            z-index: 100;
-        }
-        .task-button:hover .tooltip, .claim-button:hover .tooltip {
-            opacity: 1;
-        }
         .language-selector {
             margin-top: 1rem;
             display: flex;
@@ -535,7 +530,6 @@
                         <span data-i18n="connect_wallet">Connect Wallet</span>
                     </div>
                     <i class="fas fa-arrow-right arrow"></i>
-                    <span class="tooltip" data-i18n="connect_wallet_tip">Connect your wallet (e.g., MetaMask) to start.</span>
                 </button>
                 <button class="task-button" id="followTwitterButton">
                     <div class="flex items-center gap-3">
@@ -543,7 +537,6 @@
                         <span data-i18n="follow_on_x">Follow on X</span>
                     </div>
                     <i class="fas fa-arrow-right arrow"></i>
-                    <span class="tooltip" data-i18n="follow_on_x_tip">Click to follow @_roneslira on X.</span>
                 </button>
                 <button class="task-button" id="likePostButton">
                     <div class="flex items-center gap-3">
@@ -551,7 +544,6 @@
                         <span data-i18n="like_post">Like Post</span>
                     </div>
                     <i class="fas fa-arrow-right arrow"></i>
-                    <span class="tooltip" data-i18n="like_post_tip">Click to like our latest post on X.</span>
                 </button>
                 <button class="task-button" id="followSponsorsButton" disabled>
                     <div class="flex items-center gap-3">
@@ -560,7 +552,6 @@
                     </div>
                     <div class="spinner" id="followSpinner"></div>
                     <i class="fas fa-arrow-right arrow"></i>
-                    <span class="tooltip" data-i18n="follow_sponsors_tip">Follow active sponsors to unlock claiming.</span>
                 </button>
             </div>
             <div class="info-box" id="infoBox">
@@ -572,7 +563,6 @@
             <button class="claim-button" id="claimButton" disabled>
                 <span data-i18n="claim_tokens">Claim Tokens</span>
                 <div class="spinner" id="claimSpinner"></div>
-                <span class="tooltip" data-i18n="claim_tokens_tip">Claim your MON after completing all tasks.</span>
             </button>
             <div class="status" id="status"></div>
         </div>
@@ -613,8 +603,8 @@
     </div>
     <div id="sponsor-info-modal" class="modal">
         <div class="modal-content">
-            <h3>How Sponsors Work</h3>
-            <p>Support MonFaucet by donating:</p>
+            <h3 data-i18n="how_sponsors_work_title">How Sponsors Work</h3>
+            <p data-i18n="support_monfaucet">Support MonFaucet by donating:</p>
             <ul>
                 <li><i class="fas fa-gem"></i> Diamond: 1000 MON - 7 days</li>
                 <li><i class="fas fa-trophy"></i> Gold: 700 MON - 4 days</li>
@@ -622,41 +612,43 @@
                 <li><i class="fas fa-award"></i> Bronze: 200 MON - 1 day</li>
                 <li><i class="fas fa-coins"></i> Copper: 100 MON - 12 hours</li>
             </ul>
-            <p>Your X profile will be displayed here!</p>
-            <button class="modal-button" id="close-sponsor-info">Close</button>
+            <p data-i18n="your_x_profile">Your X profile will be displayed here!</p>
+            <button class="modal-button" id="close-sponsor-info" data-i18n="close">Close</button>
         </div>
     </div>
     <div id="about-modal" class="modal">
         <div class="modal-content">
-            <h3>About MonFaucet</h3>
-            <p>MonFaucet is a platform designed to distribute MON tokens on the Monad Testnet. Our goal is to support the Monad ecosystem by providing an easy way for users to claim tokens and engage with our sponsors. Join us in building a vibrant community!</p>
-            <button class="modal-button" id="close-about">Close</button>
+            <h3 data-i18n="about_monfaucet">About MonFaucet</h3>
+            <p data-i18n="about_description">MonFaucet is a platform designed to distribute MON tokens on the Monad Testnet. Our goal is to support the Monad ecosystem by providing an easy way for users to claim tokens and engage with our sponsors. Join us in building a vibrant community!</p>
+            <button class="modal-button" id="close-about" data-i18n="close">Close</button>
         </div>
     </div>
     <div id="contact-modal" class="modal">
         <div class="modal-content">
-            <h3>Contact Us</h3>
-            <p>For inquiries, support, or suggestions, reach out to us on X:</p>
+            <h3 data-i18n="contact_us">Contact Us</h3>
+            <p data-i18n="contact_description">For inquiries, support, or suggestions, reach out to us on X:</p>
             <p><a href="https://x.com/_roneslira" target="_blank">@_roneslira</a></p>
-            <button class="modal-button" id="close-contact">Close</button>
+            <button class="modal-button" id="close-contact" data-i18n="close">Close</button>
         </div>
     </div>
     <div id="terms-modal" class="modal">
         <div class="modal-content">
-            <h3>Terms of Use</h3>
-            <p>By using MonFaucet, you agree to:</p>
+            <h3 data-i18n="terms_of_use">Terms of Use</h3>
+            <p data-i18n="terms_description">By using MonFaucet, you agree to:</p>
             <ul>
-                <li>Use the platform responsibly and not exploit it for malicious purposes.</li>
-                <li>Complete tasks honestly to claim tokens.</li>
-                <li>Understand that token distribution is subject to availability and network conditions.</li>
-                <li>Accept that MonFaucet reserves the right to pause or modify services at any time.</li>
+                <li data-i18n="terms_responsible">Use the platform responsibly and not exploit it for malicious purposes.</li>
+                <li data-i18n="terms_honesty">Complete tasks honestly to claim tokens.</li>
+                <li data-i18n="terms_availability">Understand that token distribution is subject to availability and network conditions.</li>
+                <li data-i18n="terms_modification">Accept that MonFaucet reserves the right to pause or modify services at any time.</li>
             </ul>
-            <p>This is a testnet service; tokens have no real-world value.</p>
-            <button class="modal-button" id="close-terms">Close</button>
+            <p data-i18n="terms_testnet">This is a testnet service; tokens have no real-world value.</p>
+            <button class="modal-button" id="close-terms" data-i18n="close">Close</button>
         </div>
     </div>
     <footer>
-        <a id="about-link">About</a> | <a id="contact-link">Contact</a> | <a id="terms-link">Terms</a>
+        <a id="about-link" data-i18n="about">About</a> | 
+        <a id="contact-link" data-i18n="contact">Contact</a> | 
+        <a id="terms-link" data-i18n="terms">Terms</a>
     </footer>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
     <script>
@@ -709,30 +701,56 @@
                 last_claim: "Last Claim",
                 donate: "Donate",
                 sponsors: "Sponsors",
-                connect_wallet_tip: "Connect your wallet (e.g., MetaMask) to start.",
-                follow_on_x_tip: "Click to follow @_roneslira on X.",
-                like_post_tip: "Click to like our latest post on X.",
-                follow_sponsors_tip: "Follow active sponsors to unlock claiming.",
-                claim_tokens_tip: "Claim your MON after completing all tasks."
+                about: "About",
+                contact: "Contact",
+                terms: "Terms",
+                how_sponsors_work_title: "How Sponsors Work",
+                support_monfaucet: "Support MonFaucet by donating:",
+                your_x_profile: "Your X profile will be displayed here!",
+                close: "Close",
+                about_monfaucet: "About MonFaucet",
+                about_description: "MonFaucet is a platform designed to distribute MON tokens on the Monad Testnet. Our goal is to support the Monad ecosystem by providing an easy way for users to claim tokens and engage with our sponsors. Join us in building a vibrant community!",
+                contact_us: "Contact Us",
+                contact_description: "For inquiries, support, or suggestions, reach out to us on X:",
+                terms_of_use: "Terms of Use",
+                terms_description: "By using MonFaucet, you agree to:",
+                terms_responsible: "Use the platform responsibly and not exploit it for malicious purposes.",
+                terms_honesty: "Complete tasks honestly to claim tokens.",
+                terms_availability: "Understand that token distribution is subject to availability and network conditions.",
+                terms_modification: "Accept that MonFaucet reserves the right to pause or modify services at any time.",
+                terms_testnet: "This is a testnet service; tokens have no real-world value."
             },
             pt: {
-                claim_mon_tokens: "Reivindique tokens MON na Testnet Monad",
+                claim_mon_tokens: "Fazer Claim de MON na Testnet Monad",
                 connect_wallet: "Conectar Carteira",
                 follow_on_x: "Seguir no X",
                 like_post: "Curtir Post",
-                follow_sponsors: "Seguir Patrocinadores",
-                claim_tokens: "Reivindicar Tokens",
+                follow_sponsors: "Seguir Sponsors",
+                claim_tokens: "Fazer Claim",
                 available: "Disponível",
-                claim_amount: "Quantidade de Reivindicação",
+                claim_amount: "Valor do Claim",
                 network: "Rede",
-                last_claim: "Última Reivindicação",
+                last_claim: "Último Claim",
                 donate: "Doar",
-                sponsors: "Patrocinadores",
-                connect_wallet_tip: "Conecte sua carteira (ex.: MetaMask) para começar.",
-                follow_on_x_tip: "Clique para seguir @_roneslira no X.",
-                like_post_tip: "Clique para curtir nosso último post no X.",
-                follow_sponsors_tip: "Siga os patrocinadores ativos para liberar a reivindicação.",
-                claim_tokens_tip: "Reivindique seus MON após completar todas as tarefas."
+                sponsors: "Sponsors",
+                about: "Sobre",
+                contact: "Contato",
+                terms: "Termos",
+                how_sponsors_work_title: "Como Funcionam os Sponsors",
+                support_monfaucet: "Apoie o MonFaucet doando:",
+                your_x_profile: "Seu perfil no X será exibido aqui!",
+                close: "Fechar",
+                about_monfaucet: "Sobre o MonFaucet",
+                about_description: "O MonFaucet é uma plataforma criada para distribuir tokens MON na Testnet Monad. Nosso objetivo é apoiar o ecossistema Monad oferecendo uma maneira fácil para os usuários fazerem claim de tokens e interagirem com nossos sponsors. Junte-se a nós para construir uma comunidade vibrante!",
+                contact_us: "Fale Conosco",
+                contact_description: "Para dúvidas, suporte ou sugestões, entre em contato conosco no X:",
+                terms_of_use: "Termos de Uso",
+                terms_description: "Ao usar o MonFaucet, você concorda em:",
+                terms_responsible: "Usar a plataforma de forma responsável e não explorá-la para fins maliciosos.",
+                terms_honesty: "Completar as tarefas honestamente para fazer claim de tokens.",
+                terms_availability: "Entender que a distribuição de tokens está sujeita à disponibilidade e condições da rede.",
+                terms_modification: "Aceitar que o MonFaucet reserva o direito de pausar ou modificar os serviços a qualquer momento.",
+                terms_testnet: "Este é um serviço de testnet; os tokens não têm valor no mundo real."
             }
         };
 
@@ -836,7 +854,7 @@
 
         async function connectWallet() {
             if (!window.ethereum) {
-                status.textContent = "Please install MetaMask!";
+                status.textContent = currentLanguage === "en" ? "Please install MetaMask!" : "Por favor, instale o MetaMask!";
                 return;
             }
             try {
@@ -859,13 +877,13 @@
                 updateTaskButtons();
                 await updateUI();
                 await loadSponsors();
-                status.textContent = "Wallet connected successfully!";
+                status.textContent = currentLanguage === "en" ? "Wallet connected successfully!" : "Carteira conectada com sucesso!";
                 
                 window.ethereum.on('accountsChanged', () => location.reload());
                 window.ethereum.on('chainChanged', () => location.reload());
             } catch (error) {
                 console.error("Connect wallet error:", error);
-                status.textContent = "Failed to connect wallet. Please try again.";
+                status.textContent = currentLanguage === "en" ? "Failed to connect wallet. Please try again." : "Falha ao conectar carteira. Tente novamente.";
             }
         }
 
@@ -883,7 +901,7 @@
 
         function updateFollowSponsorsButton() {
             if (tasksCompleted.followSponsors) {
-                followSponsorsText.textContent = translations[currentLanguage].follow_sponsors === "Follow Sponsors" ? "Claim Released" : "Reivindicação Liberada";
+                followSponsorsText.textContent = translations[currentLanguage].follow_sponsors === "Follow Sponsors" ? "Claim Released" : "Claim Liberado";
                 followSpinner.style.display = "none";
             } else if (followProcessStarted) {
                 followSponsorsText.textContent = `Follow ${sponsorsFollowed}/${totalActiveSponsors}`;
@@ -937,22 +955,22 @@
                     tasksCompleted.followSponsors = true;
                     updateTaskButtons();
                     checkClaimStatus();
-                    status.textContent = currentLanguage === "en" ? "No sponsors to follow!" : "Nenhum patrocinador para seguir!";
+                    status.textContent = currentLanguage === "en" ? "No sponsors to follow!" : "Nenhum sponsor para seguir!";
                     return;
                 }
 
                 if (!followProcessStarted) {
                     followProcessStarted = true;
-                    status.textContent = currentLanguage === "en" ? "Follow the sponsors" : "Siga os patrocinadores";
+                    status.textContent = currentLanguage === "en" ? "Follow the sponsors" : "Siga os sponsors";
                     document.querySelectorAll(".sponsor-item button").forEach(btn => {
                         if (btn.textContent === "Follow") btn.classList.add("pulse");
                     });
                     updateFollowSponsorsButton();
                 } else if (followButtonClicks > 1 && !tasksCompleted.followSponsors) {
-                    status.textContent = currentLanguage === "en" ? "Follow the active sponsors in the left column!" : "Siga os patrocinadores ativos na coluna esquerda!";
-                    const activeItems = document.querySelectorAll(".sponsor-item button:not(.pulse-off)");
-                    activeItems.forEach(item => {
-                        const sponsorItem = item.closest(".sponsor-item");
+                    status.textContent = currentLanguage === "en" ? "Follow the active sponsors in the left column!" : "Siga os sponsors ativos na coluna esquerda!";
+                    const activeItems = document.querySelectorAll(".sponsor-item .badge.active");
+                    activeItems.forEach(badge => {
+                        const sponsorItem = badge.closest(".sponsor-item");
                         sponsorItem.classList.add("highlight");
                         setTimeout(() => sponsorItem.classList.remove("highlight"), 5000);
                     });
@@ -960,7 +978,7 @@
                 }
             } catch (error) {
                 console.error("Start follow sponsors error:", error);
-                status.textContent = currentLanguage === "en" ? "Failed to load sponsors." : "Falha ao carregar patrocinadores.";
+                status.textContent = currentLanguage === "en" ? "Failed to load sponsors." : "Falha ao carregar sponsors.";
             }
         }
 
@@ -969,7 +987,7 @@
             setTimeout(() => {
                 modalOverlay.style.display = "block";
                 confirmationModal.style.display = "block";
-                modalMessage.textContent = currentLanguage === "en" ? "Did you follow this sponsor on X?" : "Você seguiu este patrocinador no X?";
+                modalMessage.textContent = currentLanguage === "en" ? "Did you follow this sponsor on X?" : "Você seguiu este sponsor no X?";
                 document.getElementById("confirm-yes").onclick = () => {
                     sponsorsFollowed++;
                     if (sponsorsFollowed >= totalActiveSponsors) {
@@ -1030,7 +1048,7 @@
                 if (paused) {
                     claimButton.disabled = true;
                     claimButton.classList.remove("enabled");
-                    status.textContent = currentLanguage === "en" ? "Claims are currently paused." : "Reivindicações estão pausadas no momento.";
+                    status.textContent = currentLanguage === "en" ? "Claims are currently paused." : "Claims estão pausados no momento.";
                 } else if (now < last + cooldown) {
                     claimButton.disabled = true;
                     claimButton.classList.remove("enabled");
@@ -1040,15 +1058,15 @@
                 } else if (!tasksCompleted.followTwitter || !tasksCompleted.likePost || (hasActiveSponsors && !tasksCompleted.followSponsors)) {
                     claimButton.disabled = true;
                     claimButton.classList.remove("enabled");
-                    status.textContent = currentLanguage === "en" ? "Complete all required tasks to claim." : "Complete todas as tarefas necessárias para reivindicar.";
+                    status.textContent = currentLanguage === "en" ? "Complete all required tasks to claim." : "Complete todas as tarefas para fazer claim.";
                 } else {
                     claimButton.disabled = false;
                     claimButton.classList.add("enabled");
-                    status.textContent = currentLanguage === "en" ? "Ready to claim your tokens!" : "Pronto para reivindicar seus tokens!";
+                    status.textContent = currentLanguage === "en" ? "Ready to claim your tokens!" : "Pronto para fazer claim dos seus tokens!";
                 }
             } catch (error) {
                 console.error("Check claim status error:", error);
-                status.textContent = currentLanguage === "en" ? "Error checking claim eligibility." : "Erro ao verificar elegibilidade de reivindicação.";
+                status.textContent = currentLanguage === "en" ? "Error checking claim eligibility." : "Erro ao verificar elegibilidade para claim.";
             }
         }
 
@@ -1059,7 +1077,7 @@
                 const now = Math.floor(Date.now() / 1000);
                 const remaining = endTime - now;
                 if (remaining > 0) {
-                    claimButton.querySelector("span").textContent = currentLanguage === "en" ? `Next claim in ${formatTime(remaining)}` : `Próxima reivindicação em ${formatTime(remaining)}`;
+                    claimButton.querySelector("span").textContent = currentLanguage === "en" ? `Next claim in ${formatTime(remaining)}` : `Próximo claim em ${formatTime(remaining)}`;
                     setTimeout(updateTimer, 1000);
                 } else {
                     claimButton.querySelector("span").textContent = translations[currentLanguage].claim_tokens;
@@ -1071,16 +1089,16 @@
 
         async function claimTokens() {
             if (!tasksCompleted.connectWallet || !tasksCompleted.followTwitter || !tasksCompleted.likePost || !tasksCompleted.followSponsors) {
-                status.textContent = currentLanguage === "en" ? "Complete all required tasks first!" : "Complete todas as tarefas necessárias primeiro!";
+                status.textContent = currentLanguage === "en" ? "Complete all required tasks first!" : "Complete todas as tarefas primeiro!";
                 return;
             }
             try {
                 claimButton.disabled = true;
                 claimSpinner.style.display = "block";
-                status.textContent = currentLanguage === "en" ? "Claiming tokens..." : "Reivindicando tokens...";
+                status.textContent = currentLanguage === "en" ? "Claiming tokens..." : "Fazendo claim dos tokens...";
                 const tx = await contract.claim({ gasLimit: 200000 });
                 await tx.wait();
-                status.textContent = currentLanguage === "en" ? "Tokens claimed successfully!" : "Tokens reivindicados com sucesso!";
+                status.textContent = currentLanguage === "en" ? "Tokens claimed successfully!" : "Tokens recebidos com sucesso!";
                 tasksCompleted.followSponsors = false;
                 sponsorsFollowed = 0;
                 followProcessStarted = false;
@@ -1088,7 +1106,7 @@
                 await updateUI();
             } catch (error) {
                 console.error("Claim error:", error);
-                status.textContent = error.reason || (currentLanguage === "en" ? "Failed to claim tokens." : "Falha ao reivindicar tokens.");
+                status.textContent = error.reason || (currentLanguage === "en" ? "Failed to claim tokens." : "Falha ao fazer claim dos tokens.");
             } finally {
                 claimButton.disabled = false;
                 claimSpinner.style.display = "none";
@@ -1102,7 +1120,7 @@
             }
             const amount = donateAmount.value.trim();
             if (!amount || parseFloat(amount) <= 0) {
-                status.textContent = currentLanguage === "en" ? "Enter a valid donation amount!" : "Digite um valor de doação válido!";
+                status.textContent = currentLanguage === "en" ? "Enter a valid donation amount!" : "Digite um valor válido para doação!";
                 return;
             }
             try {
@@ -1130,7 +1148,7 @@
                         }
                     }
                     if (!slotAvailable) {
-                        status.textContent = currentLanguage === "en" ? "All sponsor slots are full!" : "Todos os slots de patrocinadores estão cheios!";
+                        status.textContent = currentLanguage === "en" ? "All sponsor slots are full!" : "Todos os slots de sponsor estão cheios!";
                         return;
                     }
                 }
@@ -1161,7 +1179,7 @@
         async function submitSponsorProfile() {
             const xProfile = xProfileInput.value.trim();
             if (!xProfile.startsWith("https://x.com/")) {
-                modalStatus.textContent = currentLanguage === "en" ? "Enter a valid X profile URL!" : "Digite uma URL válida do perfil X!";
+                modalStatus.textContent = currentLanguage === "en" ? "Enter a valid X profile URL!" : "Digite uma URL válida do X!";
                 return;
             }
             try {
@@ -1171,7 +1189,7 @@
                 const sponsors = await contract.getActiveSponsors();
                 const position = sponsors.findIndex(s => s.donor.toLowerCase() === account.toLowerCase() && s.xProfile === "");
                 if (position === -1) {
-                    modalStatus.textContent = currentLanguage === "en" ? "No sponsor slot found!" : "Nenhum slot de patrocinador encontrado!";
+                    modalStatus.textContent = currentLanguage === "en" ? "No sponsor slot found!" : "Nenhum slot de sponsor encontrado!";
                     return;
                 }
                 const tx = await contract.addSponsor(position, xProfile, { gasLimit: 200000 });
@@ -1230,10 +1248,10 @@
                         if (timeLeft > 0) startTimer(i, timeLeft, duration);
                     }
                 }
-                sponsorsList.innerHTML += `<button class="sponsor-info-button" onclick="document.getElementById('sponsor-info-modal').style.display = 'block'; document.getElementById('modal-overlay').style.display = 'block';">How It Works</button>`;
+                sponsorsList.innerHTML += `<button class="sponsor-info-button" onclick="document.getElementById('sponsor-info-modal').style.display = 'block'; document.getElementById('modal-overlay').style.display = 'block';" data-i18n="how_sponsors_work_title">How Sponsors Work</button>`;
             } catch (error) {
                 console.error("Load sponsors error:", error);
-                sponsorsList.innerHTML = `<p>${currentLanguage === "en" ? "Failed to load sponsors." : "Falha ao carregar patrocinadores."}</p>`;
+                sponsorsList.innerHTML = `<p>${currentLanguage === "en" ? "Failed to load sponsors." : "Falha ao carregar sponsors."}</p>`;
             }
         }
 
