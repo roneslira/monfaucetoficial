@@ -1383,30 +1383,34 @@
             }
         }
 
-        async function loadLeaderboard() {
-            try {
-                const claims = await contract.queryFilter("Claimed", 0, "latest");
-                const claimCounts = {};
-                claims.forEach(event => {
-                    const user = event.args.user;
-                    claimCounts[user] = (claimCounts[user] || 0) + 1;
-                });
+        leaderboardToggle.onclick = () => {
+    leaderboardContent.style.display = leaderboardContent.style.display === "block" ? "none" : "block";
+};
 
-                const sortedUsers = Object.entries(claimCounts)
-                    .sort((a, b) => b[1] - a[1])
-                    .slice(0, 10);
+async function loadLeaderboard() {
+    try {
+        const claims = await contract.queryFilter("Claimed", 0, "latest");
+        const claimCounts = {};
+        claims.forEach(event => {
+            const user = event.args.user;
+            claimCounts[user] = (claimCounts[user] || 0) + 1;
+        });
 
-                leaderboardList.innerHTML = sortedUsers.map(([user, count], index) => `
-                    <div class="leaderboard-item">
-                        <span>#${index + 1} ${user.slice(0, 6)}...${user.slice(-4)}</span>
-                        <span>${count} ${currentLanguage === "en" ? "claims" : "claims"}</span>
-                    </div>
-                `).join("");
-            } catch (error) {
-                console.error("Load leaderboard error:", error);
-                leaderboardList.innerHTML = `<p>${currentLanguage === "en" ? "Failed to load leaderboard." : "Falha ao carregar leaderboard."}</p>`;
-            }
-        }
+        const sortedUsers = Object.entries(claimCounts)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 10);
+
+        leaderboardList.innerHTML = sortedUsers.map(([user, count], index) => `
+            <div class="leaderboard-item">
+                <span>#${index + 1} ${user.slice(0, 6)}...${user.slice(-4)}</span>
+                <span>${count} ${currentLanguage === "en" ? "claims" : "claims"}</span>
+            </div>
+        `).join("");
+    } catch (error) {
+        console.error("Load leaderboard error:", error);
+        leaderboardList.innerHTML = `<p>${currentLanguage === "en" ? "Failed to load leaderboard." : "Falha ao carregar leaderboard."}</p>`;
+    }
+}
 
         function startTimer(index, timeLeft, duration) {
             const timerSpan = document.getElementById(`timer-${index}`);
