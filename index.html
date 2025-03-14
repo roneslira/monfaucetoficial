@@ -3,612 +3,361 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MonFaucet</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
-    <link rel="icon" type="image/png" href="https://i.imgur.com/12cskgZ.png">
+    <title>MonFaucet - Claim MON Tokens</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
-        :root {
-            --background-start: #000000;
-            --background-end: #0F1419;
-            --primary-color: #007AFF;
-            --secondary-color: #00D4FF;
-            --accent-color: #FF6F00;
-            --text-color: #FFFFFF;
-            --box-background: linear-gradient(to bottom, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.07));
-            --box-border: rgba(255, 255, 255, 0.1);
-            --shadow-color: rgba(0, 0, 0, 0.5);
-            --button-hover: #00D4FF;
-            --disabled-opacity: 0.5;
-            --font-family: 'Poppins', 'Montserrat', Arial, sans-serif;
-            --diamond: linear-gradient(135deg, #b0b0b0, #5a5a5a);
-            --gold: linear-gradient(135deg, #ffd700, #b8860b);
-            --silver: linear-gradient(135deg, #c0c0c0, #808080);
-            --bronze: linear-gradient(135deg, #cd7f32, #8c5523);
-            --copper: linear-gradient(135deg, #b87333, #804020);
-        }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: var(--font-family);
-            background: linear-gradient(to bottom, var(--background-start), var(--background-end));
-            color: var(--text-color);
-            min-height: 100vh;
-            text-align: center;
-            overflow-x: hidden;
-            position: relative;
-        }
-        .wallet-info {
-            display: none;
-            width: 100%;
-            max-width: 24rem;
-            margin: 0 auto;
-            padding: 0.8rem 1.5rem;
-            background: var(--box-background);
-            border-radius: 1rem;
-            border: 1px solid var(--box-border);
-            box-shadow: 0 4px 12px var(--shadow-color);
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.9rem;
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 10;
-        }
-        .wallet-info span {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
             display: flex;
+            justify-content: center;
             align-items: center;
-            gap: 0.5rem;
-        }
-        .wallet-info button {
-            background: var(--primary-color);
-            color: var(--text-color);
-            padding: 0.4rem 0.8rem;
-            border-radius: 0.7rem;
-            border: none;
-            cursor: pointer;
-            transition: all 0.4s ease-in-out;
-        }
-        .wallet-info button:hover { background: var(--button-hover); }
-        .copy-button {
-            background: transparent;
-            border: none;
-            cursor: pointer;
-            color: var(--text-color);
-            font-size: 1rem;
-            transition: color 0.3s ease;
-        }
-        .copy-button:hover { color: var(--secondary-color); }
-        .main-content {
             min-height: 100vh;
+            color: #333;
+        }
+        .container {
+            display: flex;
+            width: 90%;
+            max-width: 1200px;
+            background: #fff;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .left-column, .right-column {
+            padding: 20px;
+        }
+        .left-column {
+            width: 30%;
+            background: #f9f9f9;
+            border-right: 1px solid #ddd;
+        }
+        .right-column {
+            width: 70%;
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            justify-content: space-between;
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #1a73e8;
+        }
+        button {
+            background: #1a73e8;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px 0;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        button:hover:not(:disabled) {
+            background: #1557b0;
+        }
+        .enabled {
+            background: #28a745;
+        }
+        .enabled:hover:not(:disabled) {
+            background: #218838;
+        }
+        .pulse {
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .highlight {
+            animation: highlight 0.5s 3;
+        }
+        @keyframes highlight {
+            0% { background-color: #fff; }
+            50% { background-color: #ffd700; }
+            100% { background-color: #fff; }
+        }
+        #status {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+        #walletInfo {
+            display: none;
             align-items: center;
-            padding: 80px 20px 20px; /* Ajustado para evitar sobreposição */
-            position: relative;
-            z-index: 1;
+            margin-top: 10px;
         }
-        canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; }
-        .faucet-container {
-            width: 100%;
-            max-width: 24rem;
-            padding: 2rem;
-            background: var(--box-background);
-            backdrop-filter: blur(20px);
-            border-radius: 1rem;
-            border: 1px solid var(--box-border);
-            box-shadow: 0 8px 16px var(--shadow-color);
-            min-height: 450px;
-            position: relative;
+        #walletAddress {
+            font-size: 14px;
+            margin-right: 10px;
+            color: #1a73e8;
         }
-        .faucet-title {
-            font-size: 2.8rem;
-            font-weight: bold;
-            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            margin-bottom: 1.5rem;
+        #copyWallet, #disconnectWallet {
+            background: none;
+            color: #1a73e8;
+            padding: 0;
+            margin: 0 5px;
+            font-size: 16px;
         }
-        .faucet-description {
-            font-size: 1rem;
-            margin: 1.5rem 0;
-            opacity: 0.9;
+        #copyWallet:hover, #disconnectWallet:hover {
+            color: #1557b0;
         }
         .info-box {
-            background: var(--box-background);
-            border-radius: 0.75rem;
-            padding: 1rem;
-            margin-bottom: 1.2rem;
+            margin-top: 20px;
+            padding: 15px;
+            background: #f1f1f1;
+            border-radius: 5px;
         }
-        .info-box div { display: flex; justify-content: space-between; margin-bottom: 0.5rem; }
-        .task-button, .claim-button {
-            width: 100%;
+        .info-box p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        .sponsor-item {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            background: #fff;
+            box-shadow: 0 0 5px rgba(0,0,0,0.1);
+        }
+        .sponsor-diamond { border-left: 5px solid #b9f2ff; }
+        .sponsor-gold { border-left: 5px solid #ffd700; }
+        .sponsor-silver { border-left: 5px solid #c0c0c0; }
+        .sponsor-bronze { border-left: 5px solid #cd7f32; }
+        .sponsor-copper { border-left: 5px solid #b87333; }
+        .sponsor-item .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 1rem;
-            margin-bottom: 0.6rem;
-            background: var(--box-background);
-            border-radius: 0.75rem;
-            color: var(--text-color);
-            border: 1px solid var(--box-border);
-            box-shadow: 0 3px 10px var(--shadow-color);
-            font-weight: bold;
-            transition: all 0.4s ease-in-out;
-            cursor: pointer;
-            position: relative;
         }
-        .task-button:hover, .claim-button:hover {
-            transform: scale(1.05);
-            background: rgba(255, 255, 255, 0.08);
+        .sponsor-item p {
+            margin: 5px 0;
+            font-size: 14px;
         }
-        .claim-button {
-            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
-            opacity: var(--disabled-opacity);
-            cursor: not-allowed;
-            justify-content: center;
-        }
-        .claim-button.enabled { opacity: 1; cursor: pointer; }
-        .spinner {
-            display: none;
-            width: 1.5rem;
-            height: 1.5rem;
-            border: 3px solid rgba(255, 255, 255, 0.3);
-            border-top: 3px solid var(--text-color);
+        .badge {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
-            animation: spin 1s linear infinite;
-            position: absolute;
-            right: 1rem;
+            margin-left: 5px;
         }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .status { font-size: 0.9rem; margin-top: 1rem; opacity: 0.8; }
-        .modal {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: var(--box-background);
-            padding: 1.5rem;
-            border-radius: 1rem;
-            border: 1px solid var(--box-border);
-            box-shadow: 0 10px 20px var(--shadow-color);
-            z-index: 30;
-            max-width: 20rem;
-            text-align: left;
+        .badge.active { background: #28a745; }
+        .badge.inactive { background: #dc3545; }
+        .progress-bar {
+            width: 100%;
+            height: 5px;
+            background: #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 5px;
         }
-        .modal-buttons {
-            margin-top: 1rem;
-            display: flex;
-            gap: 0.8rem;
-            justify-content: center;
+        .progress {
+            height: 100%;
+            background: #1a73e8;
+            transition: width 1s linear;
         }
-        .modal-button {
-            background: var(--primary-color);
-            color: var(--text-color);
-            padding: 0.5rem 1rem;
-            border-radius: 0.7rem;
-            cursor: pointer;
-            transition: all 0.4s ease-in-out;
+        .sponsor-info-button {
+            width: 100%;
+            background: #6c757d;
         }
-        .modal-button:hover { background: var(--button-hover); }
-        #modal-overlay {
+        .sponsor-info-button:hover {
+            background: #5a6268;
+        }
+        .ad-container {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .ad-container img {
+            max-width: 100%;
+            border-radius: 5px;
+        }
+        .modal-overlay {
             display: none;
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 20;
-            backdrop-filter: blur(5px);
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
         }
-        .decorative-blur {
-            position: absolute;
-            border-radius: 50%;
-            filter: blur(2.5rem);
-            pointer-events: none;
-            animation: pulse 4s infinite ease-in-out;
-        }
-        @keyframes pulse {
-            0% { opacity: 0.2; } 50% { opacity: 0.4; } 100% { opacity: 0.2; }
-        }
-        .blur-1 { top: 25%; left: 25%; width: 14rem; height: 14rem; background: rgba(0, 122, 255, 0.2); }
-        .blur-2 { bottom: 33%; right: 33%; width: 20rem; height: 20rem; background: rgba(0, 212, 255, 0.1); }
-        footer {
+        .modal {
+            display: none;
             position: fixed;
-            bottom: 10px;
-            width: 100%;
-            text-align: center;
-            font-size: 0.9rem;
-            color: var(--text-color);
-            opacity: 0.7;
-            z-index: 10;
-        }
-        footer a {
-            color: var(--primary-color);
-            text-decoration: none;
-            margin: 0 0.5rem;
-            cursor: pointer;
-        }
-        footer a:hover { color: var(--secondary-color); }
-        .donate-container {
-            width: 100%;
-            max-width: 20rem;
-            margin-top: 1rem;
-            padding: 0.8rem;
-            background: var(--box-background);
-            border-radius: 0.75rem;
-            border: 1px solid var(--box-border);
-            box-shadow: 0 4px 12px var(--shadow-color);
-            text-align: center;
-            position: relative;
-        }
-        .donate-container input {
-            padding: 0.4rem;
-            margin: 0.3rem 0;
-            width: 70%;
-            border-radius: 0.5rem;
-            border: 1px solid var(--box-border);
-            background: rgba(255, 255, 255, 0.05);
-            color: var(--text-color);
-            outline: none;
-            font-size: 1rem;
-            pointer-events: auto;
-            cursor: text;
-        }
-        .donate-container button {
-            background: var(--accent-color);
-            color: var(--text-color);
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
-            border: none;
-            cursor: pointer;
-            animation: pulseButton 1.5s infinite;
-            position: relative;
-        }
-        @keyframes pulseButton {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-        .ad-container, .sponsors-container {
-            position: absolute;
-            width: 100%;
-            max-width: 22rem;
-            min-height: 450px;
-            background: var(--box-background);
-            border: 1px solid var(--box-border);
-            border-radius: 1rem;
-            padding: 0.5rem;
-            text-align: center;
-            box-shadow: 0 10px 20px var(--shadow-color), inset 0 0 10px rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-        }
-        .sponsors-container {
-            left: calc(50% - 650px);
             top: 50%;
-            transform: translateY(-50%);
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            z-index: 1001;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
         }
-        .sponsors-container h2 {
-            font-size: 1.8rem;
-            margin-bottom: 0.5rem;
-            background: var(--gold);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            text-shadow: 2px 2px 4px rgba(255, 215, 0, 0.5), -1px -1px 2px rgba(0, 0, 0, 0.3);
+        .modal button {
+            margin: 10px 5px;
         }
-        .sponsors-container h2 i {
-            color: #ffd700;
-            font-size: 2rem;
-            text-shadow: 0 0 5px rgba(255, 215, 0, 0.8);
-        }
-        .ad-container {
-            right: calc(50% - 650px);
-            top: 50%;
-            transform: translateY(-50%);
-        }
-        .sponsor-item {
-            width: 100%;
-            padding: 0.4rem;
-            margin-bottom: 0.3rem;
-            border-radius: 0.8rem;
-            background: rgba(255, 255, 255, 0.05);
-            text-align: left;
-            box-shadow: 0 4px 8px var(--shadow-color);
-            transition: transform 0.3s ease, box-shadow 0.3s ease, filter 0.3s ease;
-            display: flex;
-            flex-direction: column;
-            gap: 0.2rem;
-            animation: slideUp 0.5s ease-out;
-        }
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .sponsor-item:hover {
-            transform: scale(1.03);
-            box-shadow: 0 6px 14px var(--shadow-color);
-            filter: brightness(1.1);
-        }
-        .sponsor-item .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .sponsor-diamond {
-            border: 4px solid transparent;
-            background: var(--diamond);
-            -webkit-background-clip: padding-box;
-            background-clip: padding-box;
-            box-shadow: 0 6px 12px rgba(255, 255, 255, 0.3), 0 0 10px rgba(240, 240, 240, 0.5);
-            animation: glowDiamond 2s infinite ease-in-out;
-        }
-        @keyframes glowDiamond {
-            0%, 100% { box-shadow: 0 6px 12px rgba(255, 255, 255, 0.3), 0 0 10px rgba(240, 240, 240, 0.5); }
-            50% { box-shadow: 0 6px 12px rgba(255, 255, 255, 0.3), 0 0 15px rgba(240, 240, 240, 0.7); }
-        }
-        .sponsor-gold {
-            border: 3px solid transparent;
-            background: var(--gold);
-            -webkit-background-clip: padding-box;
-            background-clip: padding-box;
-            box-shadow: 0 5px 10px rgba(255, 215, 0, 0.3), 0 0 8px rgba(255, 215, 0, 0.4);
-            animation: glowGold 2s infinite ease-in-out;
-        }
-        @keyframes glowGold {
-            0%, 100% { box-shadow: 0 5px 10px rgba(255, 215, 0, 0.3), 0 0 8px rgba(255, 215, 0, 0.4); }
-            50% { box-shadow: 0 5px 10px rgba(255, 215, 0, 0.3), 0 0 12px rgba(255, 215, 0, 0.6); }
-        }
-        .sponsor-silver {
-            border: 2px solid transparent;
-            background: var(--silver);
-            -webkit-background-clip: padding-box;
-            background-clip: padding-box;
-            box-shadow: 0 4px 8px rgba(192, 192, 192, 0.2), 0 0 6px rgba(192, 192, 192, 0.3);
-            animation: glowSilver 2s infinite ease-in-out;
-        }
-        @keyframes glowSilver {
-            0%, 100% { box-shadow: 0 4px 8px rgba(192, 192, 192, 0.2), 0 0 6px rgba(192, 192, 192, 0.3); }
-            50% { box-shadow: 0 4px 8px rgba(192, 192, 192, 0.2), 0 0 10px rgba(192, 192, 192, 0.5); }
-        }
-        .sponsor-bronze {
-            border: 2px solid transparent;
-            background: var(--bronze);
-            -webkit-background-clip: padding-box;
-            background-clip: padding-box;
-            box-shadow: 0 3px 6px rgba(205, 127, 50, 0.2), 0 0 5px rgba(205, 127, 50, 0.3);
-            animation: glowBronze 2s infinite ease-in-out;
-        }
-        @keyframes glowBronze {
-            0%, 100% { box-shadow: 0 3px 6px rgba(205, 127, 50, 0.2), 0 0 5px rgba(205, 127, 50, 0.3); }
-            50% { box-shadow: 0 3px 6px rgba(205, 127, 50, 0.2), 0 0 8px rgba(205, 127, 50, 0.4); }
-        }
-        .sponsor-copper {
-            border: 2px solid transparent;
-            background: var(--copper);
-            -webkit-background-clip: padding-box;
-            background-clip: padding-box;
-            box-shadow: 0 2px 4px rgba(184, 115, 51, 0.2), 0 0 4px rgba(184, 115, 51, 0.3);
-            animation: glowCopper 2s infinite ease-in-out;
-        }
-        @keyframes glowCopper {
-            0%, 100% { box-shadow: 0 2px 4px rgba(184, 115, 51, 0.2), 0 0 4px rgba(184, 115, 51, 0.3); }
-            50% { box-shadow: 0 2px 4px rgba(184, 115, 51, 0.2), 0 0 6px rgba(184, 115, 51, 0.4); }
-        }
-        .sponsor-item p { font-size: 0.85rem; display: flex; align-items: center; gap: 0.3rem; margin: 0; }
-        .sponsor-item p:first-child { font-weight: bold; font-size: 0.95rem; }
-        .sponsor-item button {
-            background: var(--primary-color);
-            padding: 0.3rem 0.6rem;
-            border-radius: 0.5rem;
-            border: none;
-            color: var(--text-color);
-            cursor: pointer;
-            transition: background 0.3s ease;
-        }
-        .sponsor-item button:hover { background: var(--button-hover); }
-        .sponsor-item button.pulse {
-            animation: pulseFollow 1.5s infinite;
-        }
-        @keyframes pulseFollow {
-            0% { transform: scale(1); box-shadow: 0 0 5px var(--primary-color); }
-            50% { transform: scale(1.05); box-shadow: 0 0 10px var(--primary-color); }
-            100% { transform: scale(1); box-shadow: 0 0 5px var(--primary-color); }
-        }
-        .sponsor-info-button {
-            background: var(--accent-color);
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
-            border: none;
-            color: var(--text-color);
-            cursor: pointer;
-            margin-top: 0.3rem;
-            transition: background 0.3s ease;
-        }
-        .sponsor-info-button:hover { background: var(--button-hover); }
-        .progress-bar {
-            width: 100%;
-            height: 0.4rem;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 0.2rem;
-            overflow: hidden;
-            margin-bottom: 0.1rem;
-        }
-        .progress {
-            height: 100%;
-            background: var(--primary-color);
-            transition: width 1s linear;
-        }
-        .badge {
-            width: 10px;
-            height: 10px;
+        .spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #fff;
+            border-top: 3px solid transparent;
             border-radius: 50%;
-            display: inline-block;
-            margin-left: 0.3rem;
+            animation: spin 1s linear infinite;
+            vertical-align: middle;
+            margin-left: 10px;
         }
-        .badge.active { background: #00ff00; }
-        .badge.inactive { background: #808080; }
-        .ad-image { width: 100%; height: auto; border-radius: 0.5rem; margin: 0; padding: 0; }
-        @media (max-width: 1400px) { .ad-container, .sponsors-container { display: none; } }
-        @media (max-width: 768px) {
-            .faucet-container { max-width: 90%; padding: 1.5rem; min-height: 400px; }
-            .faucet-title { font-size: 2rem; }
-            .task-button, .claim-button { padding: 0.8rem; }
-            .wallet-info { max-width: 90%; }
-            .donate-container { max-width: 90%; }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .language-selector {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        .language-flag {
+            width: 30px;
+            height: 20px;
+            margin: 0 5px;
+            cursor: pointer;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+        .footer {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+        }
+        .footer a {
+            color: #1a73e8;
+            text-decoration: none;
+            margin: 0 5px;
+        }
+        .footer a:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
 <body>
-    <div class="wallet-info" id="walletInfo">
-        <span id="walletAddress"></span>
-        <button class="copy-button" id="copyWallet" aria-label="Copy wallet address" title="Copy Address">
-            <i class="fas fa-copy"></i>
-        </button>
-        <button id="disconnectWallet">Disconnect</button>
+    <div class="language-selector">
+        <img src="https://flagcdn.com/w40/us.png" class="language-flag" data-lang="en" alt="English">
+        <img src="https://flagcdn.com/w40/br.png" class="language-flag" data-lang="pt" alt="Português">
     </div>
-    <div class="main-content">
-        <canvas></canvas>
-        <div class="sponsors-container" id="sponsors-container">
-            <h2><i class="fas fa-crown"></i> Sponsors</h2>
+    <div class="container">
+        <div class="left-column">
+            <h1 data-i18n="sponsors">Sponsors</h1>
             <div id="sponsors-list"></div>
         </div>
-        <div class="faucet-container">
-            <div class="faucet-title">MonFaucet</div>
-            <p class="faucet-description">Claim MON tokens on Monad Testnet</p>
-            <div class="task-buttons" id="taskButtons">
-                <button class="task-button" id="connectWalletButton" title="Connect your wallet to start">
-                    <div class="flex items-center gap-3">
-                        <i class="fas fa-wallet icon"></i>
-                        <span>Connect Wallet</span>
+        <div class="right-column">
+            <div>
+                <h1 data-i18n="claim_mon_tokens">Claim MON tokens on Monad Testnet</h1>
+                <button id="connectWalletButton" data-i18n="connect_wallet">Connect Wallet</button>
+                <div id="walletInfo">
+                    <span id="walletAddress"></span>
+                    <button id="copyWallet" title="Copy Address"><i class="fas fa-copy"></i></button>
+                    <button id="disconnectWallet" data-i18n="disconnect">Disconnect</button>
+                </div>
+                <button id="followTwitterButton" data-i18n="follow_on_x">Follow on X</button>
+                <button id="likePostButton" data-i18n="like_post">Like Post</button>
+                <div style="display: flex; align-items: center;">
+                    <button id="followSponsorsButton" style="flex: 1;">
+                        <span id="followSponsorsText" data-i18n="follow_sponsors">Follow Sponsors</span>
+                        <span id="followSpinner" class="spinner"></span>
+                    </button>
+                </div>
+                <div style="display: flex; align-items: center;">
+                    <button id="claimButton">
+                        <span data-i18n="claim_tokens">Claim Tokens</span>
+                        <span id="claimSpinner" class="spinner"></span>
+                    </button>
+                </div>
+                <div class="info-box">
+                    <p><strong data-i18n="available">Available:</strong> <span id="available">0 MON</span></p>
+                    <p><strong data-i18n="claim_amount">Claim Amount:</strong> <span id="claimAmount">0 MON</span></p>
+                    <p><strong data-i18n="network">Network:</strong> Monad Testnet</p>
+                    <p><strong data-i18n="cooldown_period">Cooldown Period:</strong> <span id="cooldownPeriod">Loading...</span></p>
+                    <p><strong data-i18n="last_claim">Last Claim:</strong> <span id="lastClaim">None</span></p>
+                </div>
+                <div>
+                    <p data-i18n="support_monfaucet">Support MonFaucet by donating:</p>
+                    <input type="number" id="donateAmount" min="0" step="0.1" data-i18n-placeholder="enter_mon_amount" placeholder="Enter MON amount">
+                    <div style="display: flex; align-items: center;">
+                        <button id="donateButton" data-i18n="donate">Donate</button>
+                        <span id="donateSpinner" class="spinner"></span>
                     </div>
-                    <i class="fas fa-arrow-right arrow"></i>
-                </button>
-                <button class="task-button" id="followTwitterButton" title="Follow @_roneslira on X">
-                    <div class="flex items-center gap-3">
-                        <i class="fab fa-twitter icon"></i>
-                        <span>Follow on X</span>
-                    </div>
-                    <i class="fas fa-arrow-right arrow"></i>
-                </button>
-                <button class="task-button" id="likePostButton" title="Like our latest post on X">
-                    <div class="flex items-center gap-3">
-                        <i class="fas fa-heart icon"></i>
-                        <span>Like Post</span>
-                    </div>
-                    <i class="fas fa-arrow-right arrow"></i>
-                </button>
-                <button class="task-button" id="followSponsorsButton" disabled title="Follow our sponsors on X">
-                    <div class="flex items-center gap-3">
-                        <i class="fab fa-twitter icon"></i>
-                        <span id="followSponsorsText">Follow Sponsors</span>
-                    </div>
-                    <div class="spinner" id="followSpinner"></div>
-                    <i class="fas fa-arrow-right arrow"></i>
-                </button>
+                </div>
+                <p id="status"></p>
             </div>
-            <div class="info-box" id="infoBox">
-                <div><span>Available</span><span id="available">0.00 MON</span></div>
-                <div><span>Claim Amount</span><span id="claimAmount">0.01 MON</span></div>
-                <div><span>Network</span><span>Monad Testnet</span></div>
-                <div><span>Last Claim</span><span id="lastClaim">None</span></div>
+            <div class="ad-container">
+                <a id="adLink" href="#" target="_blank">
+                    <img id="adImage" src="" alt="Advertisement">
+                </a>
             </div>
-            <button class="claim-button" id="claimButton" disabled>
-                Claim Tokens
-                <div class="spinner" id="claimSpinner"></div>
-            </button>
-            <div class="status" id="status"></div>
+            <div class="footer">
+                <a href="#" id="about-link" data-i18n="about">About</a> |
+                <a href="#" id="contact-link" data-i18n="contact">Contact</a> |
+                <a href="#" id="terms-link" data-i18n="terms">Terms</a>
+            </div>
         </div>
-        <div class="donate-container">
-            <input type="number" id="donateAmount" placeholder="Enter MON amount" step="0.01" min="0">
-            <button id="donateButton">
-                Donate
-                <div class="spinner" id="donateSpinner"></div>
-            </button>
-        </div>
-        <div class="ad-container">
-            <a href="https://airdropsmanager.com/" target="_blank">
-                <img id="adImage" src="https://i.imgur.com/NgWonX9.png" alt="Ad Space">
-            </a>
-        </div>
-        <div class="decorative-blur blur-1"></div>
-        <div class="decorative-blur blur-2"></div>
     </div>
-    <div id="modal-overlay"></div>
+    <div id="modal-overlay" class="modal-overlay"></div>
     <div id="confirmation-modal" class="modal">
-        <div class="modal-content" id="modalMessage">Did you complete the task?</div>
-        <div class="modal-buttons">
-            <button class="modal-button" id="confirm-yes">Yes</button>
-            <button class="modal-button" id="confirm-no">No</button>
-        </div>
+        <p id="modalMessage"></p>
+        <button id="confirm-yes" data-i18n="yes">Yes</button>
+        <button id="confirm-no" data-i18n="no">No</button>
     </div>
     <div id="sponsor-modal" class="modal">
-        <div class="modal-content">
-            <h3>Congratulations!</h3>
-            <p>You are a <span id="sponsorLevel"></span> Sponsor!</p>
-            <input type="text" id="xProfileInput" placeholder="Enter your X profile URL">
-            <button class="modal-button" id="submitXProfile">
-                Submit
-                <div class="spinner" id="submitSpinner"></div>
-            </button>
-            <p id="modalStatus"></p>
+        <h2 data-i18n="congratulations">Congratulations!</h2>
+        <p data-i18n="you_are_a_sponsor">You are a <span id="sponsorLevel"></span> Sponsor!</p>
+        <p data-i18n="your_x_profile">Your X profile will be displayed here!</p>
+        <input type="text" id="xProfileInput" data-i18n-placeholder="enter_x_profile" placeholder="Enter your X profile URL">
+        <div style="display: flex; align-items: center; justify-content: center;">
+            <button id="submitXProfile" data-i18n="submit">Submit</button>
+            <span id="submitSpinner" class="spinner"></span>
         </div>
+        <p id="modalStatus" style="color: #666; margin-top: 10px;"></p>
     </div>
     <div id="sponsor-info-modal" class="modal">
-        <div class="modal-content">
-            <h3>How Sponsors Work</h3>
-            <p>Support MonFaucet by donating:</p>
-            <ul>
-                <li><i class="fas fa-gem"></i> Diamond: 1000 MON - 7 days</li>
-                <li><i class="fas fa-trophy"></i> Gold: 700 MON - 4 days</li>
-                <li><i class="fas fa-medal"></i> Silver: 500 MON - 2 days</li>
-                <li><i class="fas fa-award"></i> Bronze: 200 MON - 1 day</li>
-                <li><i class="fas fa-coins"></i> Copper: 100 MON - 12 hours</li>
-            </ul>
-            <p>Your X profile will be displayed here!</p>
-            <button class="modal-button" id="close-sponsor-info">Close</button>
-        </div>
+        <h2 data-i18n="how_sponsors_work_title">How Sponsors Work</h2>
+        <p>Diamond Sponsor: 1000 MON, 7 days</p>
+        <p>Gold Sponsor: 700 MON, 4 days</p>
+        <p>Silver Sponsor: 500 MON, 2 days</p>
+        <p>Bronze Sponsor: 200 MON, 1 day</p>
+        <p>Copper Sponsor: 100 MON, 12 hours</p>
+        <button id="close-sponsor-info" data-i18n="close">Close</button>
     </div>
     <div id="about-modal" class="modal">
-        <div class="modal-content">
-            <h3>About MonFaucet</h3>
-            <p>MonFaucet is a platform designed to distribute MON tokens on the Monad Testnet. Our goal is to support the Monad ecosystem by providing an easy way for users to claim tokens and engage with our sponsors. Join us in building a vibrant community!</p>
-            <button class="modal-button" id="close-about">Close</button>
-        </div>
+        <h2 data-i18n="about_monfaucet">About MonFaucet</h2>
+        <p data-i18n="about_description">MonFaucet is a platform designed to distribute MON tokens on the Monad Testnet...</p>
+        <button id="close-about" data-i18n="close">Close</button>
     </div>
     <div id="contact-modal" class="modal">
-        <div class="modal-content">
-            <h3>Contact Us</h3>
-            <p>For inquiries, support, or suggestions, reach out to us on X:</p>
-            <p><a href="https://x.com/_roneslira" target="_blank">@_roneslira</a></p>
-            <button class="modal-button" id="close-contact">Close</button>
-        </div>
+        <h2 data-i18n="contact_us">Contact Us</h2>
+        <p data-i18n="contact_description">For inquiries, support, or suggestions, reach out to us on X: <a href="https://x.com/_roneslira" target="_blank">@_roneslira</a></p>
+        <button id="close-contact" data-i18n="close">Close</button>
     </div>
     <div id="terms-modal" class="modal">
-        <div class="modal-content">
-            <h3>Terms of Use</h3>
-            <p>By using MonFaucet, you agree to:</p>
-            <ul>
-                <li>Use the platform responsibly and not exploit it for malicious purposes.</li>
-                <li>Complete tasks honestly to claim tokens.</li>
-                <li>Understand that token distribution is subject to availability and network conditions.</li>
-                <li>Accept that MonFaucet reserves the right to pause or modify services at any time.</li>
-            </ul>
-            <p>This is a testnet service; tokens have no real-world value.</p>
-            <button class="modal-button" id="close-terms">Close</button>
-        </div>
+        <h2 data-i18n="terms_of_use">Terms of Use</h2>
+        <p data-i18n="terms_description">By using MonFaucet, you agree to:</p>
+        <ul style="text-align: left;">
+            <li data-i18n="terms_responsible">Use the platform responsibly...</li>
+            <li data-i18n="terms_honesty">Complete tasks honestly...</li>
+            <li data-i18n="terms_availability">Understand that token distribution...</li>
+            <li data-i18n="terms_modification">Accept that MonFaucet reserves...</li>
+            <li data-i18n="terms_testnet">This is a testnet service...</li>
+        </ul>
+        <button id="close-terms" data-i18n="close">Close</button>
     </div>
-    <footer>
-        <a id="about-link">About</a> | <a id="contact-link">Contact</a> | <a id="terms-link">Terms</a>
-    </footer>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
     <script>
         const CONTRACT_ADDRESS = "0xF3D72b267890b0854ad126A26F39Cf221491D35A";
@@ -641,16 +390,150 @@
         const MONAD_TESTNET = {
             chainId: '0x279F', // 10143
             chainName: 'Monad Testnet',
-            rpcUrls: ['https://testnet-rpc.monad.xyz/'],
+            rpcUrls: [
+                'https://testnet-rpc.monad.xyz/',      // RPC original
+                'https://monad-testnet.drpc.org',      // Novo RPC 1
+                'https://testnet-rpc.monad.xyz'        // Novo RPC 2 (mesmo domínio, sem barra final)
+            ],
             nativeCurrency: { name: 'MON', symbol: 'MON', decimals: 18 },
             blockExplorerUrls: ['https://testnet.monadexplorer.com/']
         };
+
+        const translations = {
+            en: {
+                claim_mon_tokens: "Claim MON tokens on Monad Testnet",
+                connect_wallet: "Connect Wallet",
+                follow_on_x: "Follow on X",
+                like_post: "Like Post",
+                follow_sponsors: "Follow Sponsors",
+                claim_tokens: "Claim Tokens",
+                available: "Available",
+                claim_amount: "Claim Amount",
+                network: "Network",
+                cooldown_period: "Cooldown Period",
+                last_claim: "Last Claim",
+                donate: "Donate",
+                sponsors: "Sponsors",
+                about: "About",
+                contact: "Contact",
+                terms: "Terms",
+                how_sponsors_work_title: "How Sponsors Work",
+                support_monfaucet: "Support MonFaucet by donating:",
+                your_x_profile: "Your X profile will be displayed here!",
+                close: "Close",
+                about_monfaucet: "About MonFaucet",
+                about_description: "MonFaucet is a platform designed to distribute MON tokens on the Monad Testnet...",
+                contact_us: "Contact Us",
+                contact_description: "For inquiries, support, or suggestions, reach out to us on X:",
+                terms_of_use: "Terms of Use",
+                terms_description: "By using MonFaucet, you agree to:",
+                terms_responsible: "Use the platform responsibly and not exploit it for malicious purposes.",
+                terms_honesty: "Complete tasks honestly to claim tokens.",
+                terms_availability: "Understand that token distribution is subject to availability and network conditions.",
+                terms_modification: "Accept that MonFaucet reserves the right to pause or modify services at any time.",
+                terms_testnet: "This is a testnet service; tokens have no real-world value.",
+                disconnect: "Disconnect",
+                enter_mon_amount: "Enter MON amount",
+                yes: "Yes",
+                no: "No",
+                complete_all_tasks: "Complete all required tasks to claim",
+                follow: "Follow",
+                claim_released: "Claim Released",
+                congratulations: "Congratulations!",
+                you_are_a_sponsor: "You are a <span id='sponsorLevel'></span> Sponsor!",
+                enter_x_profile: "Enter your X profile URL",
+                submit: "Submit",
+                error_checking_claim: "Error checking claim eligibility. Check console for details.",
+                cooldown_not_elapsed: "Cannot claim yet. Cooldown active. Wait {time}.",
+                please_install_metamask: "Please install MetaMask!",
+                wallet_connected: "Wallet connected successfully!",
+                failed_connect_wallet: "Failed to connect wallet. Please try again.",
+                failed_load_ui: "Failed to load UI data.",
+                connect_wallet_to_start: "Connect your wallet to start.",
+                claims_paused: "Claims are currently paused.",
+                cooldown_active: "Cooldown active. Wait {time}.",
+                ready_to_claim: "Ready to claim your tokens!",
+                network_failed: "Network connection failed. Please try again later.",
+                expired: "Expired",
+                none: "None"
+            },
+            pt: {
+                claim_mon_tokens: "Fazer Claim de MON na Testnet Monad",
+                connect_wallet: "Conectar Carteira",
+                follow_on_x: "Seguir no X",
+                like_post: "Curtir Post",
+                follow_sponsors: "Seguir Sponsors",
+                claim_tokens: "Fazer Claim",
+                available: "Disponível",
+                claim_amount: "Valor do Claim",
+                network: "Rede",
+                cooldown_period: "Período de Cooldown",
+                last_claim: "Último Claim",
+                donate: "Doar",
+                sponsors: "Sponsors",
+                about: "Sobre",
+                contact: "Contato",
+                terms: "Termos",
+                how_sponsors_work_title: "Como Funcionam os Sponsors",
+                support_monfaucet: "Apoie o MonFaucet doando:",
+                your_x_profile: "Seu perfil no X será exibido aqui!",
+                close: "Fechar",
+                about_monfaucet: "Sobre o MonFaucet",
+                about_description: "O MonFaucet é uma plataforma criada para distribuir tokens MON na Testnet Monad...",
+                contact_us: "Fale Conosco",
+                contact_description: "Para dúvidas, suporte ou sugestões, entre em contato conosco no X:",
+                terms_of_use: "Termos de Uso",
+                terms_description: "Ao usar o MonFaucet, você concorda em:",
+                terms_responsible: "Usar a plataforma de forma responsável e não explorá-la para fins maliciosos.",
+                terms_honesty: "Completar as tarefas honestamente para fazer claim de tokens.",
+                terms_availability: "Entender que a distribuição de tokens está sujeita à disponibilidade e condições da rede.",
+                terms_modification: "Aceitar que o MonFaucet reserva o direito de pausar ou modificar os serviços a qualquer momento.",
+                terms_testnet: "Este é um serviço de testnet; os tokens não têm valor no mundo real.",
+                disconnect: "Desconectar",
+                enter_mon_amount: "Digite o valor em MON",
+                yes: "Sim",
+                no: "Não",
+                complete_all_tasks: "Complete todas as tarefas necessárias para fazer claim",
+                follow: "Seguir",
+                claim_released: "Claim Liberado",
+                congratulations: "Parabéns!",
+                you_are_a_sponsor: "Você é um Sponsor <span id='sponsorLevel'></span>!",
+                enter_x_profile: "Digite a URL do seu perfil no X",
+                submit: "Enviar",
+                error_checking_claim: "Erro ao verificar elegibilidade para claim. Verifique o console para detalhes.",
+                cooldown_not_elapsed: "Ainda não pode fazer claim. Cooldown ativo. Aguarde {time}.",
+                please_install_metamask: "Por favor, instale o MetaMask!",
+                wallet_connected: "Carteira conectada com sucesso!",
+                failed_connect_wallet: "Falha ao conectar carteira. Tente novamente.",
+                failed_load_ui: "Falha ao carregar dados da interface.",
+                connect_wallet_to_start: "Conecte sua carteira para começar.",
+                claims_paused: "Claims estão pausados no momento.",
+                cooldown_active: "Cooldown ativo. Aguarde {time}.",
+                ready_to_claim: "Pronto para fazer claim dos seus tokens!",
+                network_failed: "Falha na conexão com a rede. Tente novamente mais tarde.",
+                expired: "Expirado",
+                none: "Nenhum"
+            }
+        };
+
+        const ads = [
+            { url: "https://airdropsmanager.com/", image: "https://i.imgur.com/NgWonX9.png" },
+            { url: "https://example1.com", image: "https://via.placeholder.com/300x600?text=Ad+1" },
+            { url: "https://example2.com", image: "https://via.placeholder.com/300x600?text=Ad+2" },
+            { url: "https://example3.com", image: "https://via.placeholder.com/300x600?text=Ad+3" },
+            { url: "https://example4.com", image: "https://via.placeholder.com/300x600?text=Ad+4" }
+        ];
+        let currentAdIndex = 0;
 
         let provider, signer, contract, account;
         let tasksCompleted = { connectWallet: false, followTwitter: false, likePost: false, followSponsors: false };
         let sponsorsFollowed = 0;
         let totalActiveSponsors = 0;
         let followProcessStarted = false;
+        let followButtonClicks = 0;
+        let currentLanguage = localStorage.getItem("language") || "en";
+        const INACTIVITY_TIMEOUT = 30 * 60 * 1000;
+        const REQUEST_DELAY = 1100; // Atraso de 1.1s entre requisições
 
         const connectWalletButton = document.getElementById("connectWalletButton");
         const followTwitterButton = document.getElementById("followTwitterButton");
@@ -670,6 +553,7 @@
         const walletAddress = document.getElementById("walletAddress");
         const available = document.getElementById("available");
         const claimAmountEl = document.getElementById("claimAmount");
+        const cooldownPeriodEl = document.getElementById("cooldownPeriod");
         const lastClaim = document.getElementById("lastClaim");
         const modalOverlay = document.getElementById("modal-overlay");
         const confirmationModal = document.getElementById("confirmation-modal");
@@ -692,540 +576,522 @@
         const closeAbout = document.getElementById("close-about");
         const closeContact = document.getElementById("close-contact");
         const closeTerms = document.getElementById("close-terms");
+        <script>
+    // Função para atrasar requisições
+    const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-        connectWalletButton.onclick = connectWallet;
-        followTwitterButton.onclick = followTwitter;
-        likePostButton.onclick = likePost;
-        followSponsorsButton.onclick = startFollowSponsors;
-        claimButton.onclick = claimTokens;
-        disconnectWallet.onclick = disconnect;
-        copyWallet.onclick = copyAddress;
-        donateButton.onclick = donate;
-        submitXProfile.onclick = submitSponsorProfile;
-        closeSponsorInfo.onclick = closeModal;
-        aboutLink.onclick = () => { modalOverlay.style.display = "block"; aboutModal.style.display = "block"; };
-        contactLink.onclick = () => { modalOverlay.style.display = "block"; contactModal.style.display = "block"; };
-        termsLink.onclick = () => { modalOverlay.style.display = "block"; termsModal.style.display = "block"; };
-        closeAbout.onclick = closeModal;
-        closeContact.onclick = closeModal;
-        closeTerms.onclick = closeModal;
-
-        donateAmount.addEventListener("input", (e) => {
-            if (e.target.value < 0) e.target.value = 0;
-        });
-
-        function debounce(func, wait) {
-            let timeout;
-            return function executedFunction(...args) {
-                const later = () => {
-                    clearTimeout(timeout);
-                    func(...args);
-                };
-                clearTimeout(timeout);
-                timeout = setTimeout(later, wait);
-            };
-        }
-
-        async function connectWallet() {
-            if (!window.ethereum) {
-                status.textContent = "Please install MetaMask!";
-                return;
-            }
+    // Função para criar um provider com failover entre múltiplos RPCs
+    async function getProviderWithFailover(rpcUrls) {
+        for (let i = 0; i < rpcUrls.length; i++) {
+            const rpcUrl = rpcUrls[i];
             try {
-                provider = new ethers.providers.Web3Provider(window.ethereum);
-                await provider.send("eth_requestAccounts", []);
-                signer = provider.getSigner();
-                account = await signer.getAddress();
-                contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
-
-                const network = await provider.getNetwork();
-                if (network.chainId !== 10143) {
-                    await window.ethereum.request({ method: 'wallet_addEthereumChain', params: [MONAD_TESTNET] });
-                }
-
-                walletAddress.textContent = `${account.slice(0, 6)}...${account.slice(-4)}`;
-                walletInfo.style.display = "flex";
-                tasksCompleted.connectWallet = true;
-                updateTaskButtons();
-                await updateUI();
-                await loadSponsors();
-                status.textContent = "Wallet connected successfully!";
-                
-                window.ethereum.on('accountsChanged', () => location.reload());
-                window.ethereum.on('chainChanged', () => location.reload());
+                const tempProvider = new ethers.providers.JsonRpcProvider(rpcUrl);
+                const blockNumber = await tempProvider.getBlockNumber();
+                console.log(`RPC ${rpcUrl} funcionando. Bloco: ${blockNumber}`);
+                return tempProvider;
             } catch (error) {
-                console.error("Connect wallet error:", error);
-                status.textContent = "Failed to connect wallet. Please try again.";
+                console.warn(`RPC ${rpcUrl} falhou: ${error.message}. Tentando próximo...`);
+                if (i === rpcUrls.length - 1) {
+                    throw new Error("Todos os RPCs falharam.");
+                }
+                await delay(500); // Pequeno atraso antes de tentar o próximo
             }
         }
+    }
 
-        function updateTaskButtons() {
-            connectWalletButton.disabled = tasksCompleted.connectWallet;
-            followTwitterButton.disabled = tasksCompleted.followTwitter;
-            likePostButton.disabled = tasksCompleted.likePost;
-            followSponsorsButton.disabled = !tasksCompleted.connectWallet || tasksCompleted.followSponsors;
-            connectWalletButton.style.opacity = tasksCompleted.connectWallet ? "0.5" : "1";
-            followTwitterButton.style.opacity = tasksCompleted.followTwitter ? "0.5" : "1";
-            likePostButton.style.opacity = tasksCompleted.likePost ? "0.5" : "1";
-            followSponsorsButton.style.opacity = tasksCompleted.followSponsors ? "0.5" : "1";
-            updateFollowSponsorsButton();
-        }
-
-        function updateFollowSponsorsButton() {
-            if (tasksCompleted.followSponsors) {
-                followSponsorsText.textContent = "Claim Released";
-                followSpinner.style.display = "none";
-            } else if (followProcessStarted) {
-                followSponsorsText.textContent = `Follow ${sponsorsFollowed}/${totalActiveSponsors}`;
-                followSpinner.style.display = "block";
-            } else {
-                followSponsorsText.textContent = "Follow Sponsors";
-                followSpinner.style.display = "none";
-            }
-        }
-
-        async function followTwitter() {
-    window.open("https://x.com/_roneslira", "_blank");
-    modalOverlay.style.display = "block";
-    confirmationModal.style.display = "block";
-    modalMessage.textContent = "Did you follow @_roneslira on X?";
-    document.getElementById("confirm-yes").onclick = () => {
-        tasksCompleted.followTwitter = true;
-        updateTaskButtons();
-        checkClaimStatus();
-        closeModal();
-    };
-    document.getElementById("confirm-no").onclick = closeModal;
-}
-
-async function likePost() {
-    window.open("https://x.com/_roneslira/status/1900013122238169182", "_blank");
-    modalOverlay.style.display = "block";
-    confirmationModal.style.display = "block";
-    modalMessage.textContent = "Did you like the post on X?";
-    document.getElementById("confirm-yes").onclick = () => {
-        tasksCompleted.likePost = true;
-        updateTaskButtons();
-        checkClaimStatus();
-        closeModal();
-    };
-    document.getElementById("confirm-no").onclick = closeModal;
-}
-
-        async function startFollowSponsors() {
-            if (!tasksCompleted.connectWallet) {
-                status.textContent = "Please connect your wallet first!";
-                return;
-            }
+    // Função para chamadas ao contrato com failover e retry
+    async function callContractMethod(method, args = [], retriesPerRpc = 3) {
+        let lastError;
+        for (let rpcIndex = 0; rpcIndex < MONAD_TESTNET.rpcUrls.length; rpcIndex++) {
+            const rpcUrl = MONAD_TESTNET.rpcUrls[rpcIndex];
             try {
-                const sponsors = await contract.getActiveSponsors();
-                const activeSponsors = sponsors.filter(s => s.donor !== "0x0000000000000000000000000000000000000000" && s.xProfile !== "");
-                totalActiveSponsors = activeSponsors.length;
-
-                if (totalActiveSponsors === 0) {
-                    tasksCompleted.followSponsors = true;
-                    updateTaskButtons();
-                    checkClaimStatus();
-                    status.textContent = "No sponsors to follow!";
-                    return;
+                if (!provider || provider.connection.url !== rpcUrl) {
+                    provider = new ethers.providers.JsonRpcProvider(rpcUrl);
+                    contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer || provider);
                 }
-
-                if (!followProcessStarted) {
-                    followProcessStarted = true;
-                    status.textContent = "Follow the sponsors";
-                    document.querySelectorAll(".sponsor-item button").forEach(btn => {
-                        if (btn.textContent === "Follow") btn.classList.add("pulse");
-                    });
-                    updateFollowSponsorsButton();
-                }
-            } catch (error) {
-                console.error("Start follow sponsors error:", error);
-                status.textContent = "Failed to load sponsors.";
-            }
-        }
-
-        function handleSponsorFollow(url) {
-            window.open(url, "_blank");
-            setTimeout(() => {
-                modalOverlay.style.display = "block";
-                confirmationModal.style.display = "block";
-                modalMessage.textContent = "Did you follow this sponsor on X?";
-                document.getElementById("confirm-yes").onclick = () => {
-                    sponsorsFollowed++;
-                    if (sponsorsFollowed >= totalActiveSponsors) {
-                        tasksCompleted.followSponsors = true;
-                        document.querySelectorAll(".sponsor-item button").forEach(btn => btn.classList.remove("pulse"));
-                    }
-                    updateTaskButtons();
-                    checkClaimStatus();
-                    closeModal();
-                };
-                document.getElementById("confirm-no").onclick = closeModal;
-            }, 500);
-        }
-
-        function closeModal() {
-            modalOverlay.style.display = "none";
-            confirmationModal.style.display = "none";
-            sponsorModal.style.display = "none";
-            sponsorInfoModal.style.display = "none";
-            aboutModal.style.display = "none";
-            contactModal.style.display = "none";
-            termsModal.style.display = "none";
-            modalStatus.textContent = "";
-        }
-
-        async function updateUI() {
-            try {
-                const balance = await contract.getBalance();
-                const claimAmt = await contract.claimAmount();
-                available.textContent = ethers.utils.formatEther(balance) + " MON";
-                claimAmountEl.textContent = ethers.utils.formatEther(claimAmt) + " MON";
-                if (account) {
-                    const last = await contract.lastClaim(account);
-                    lastClaim.textContent = last > 0 ? new Date(last * 1000).toLocaleString() : "None";
-                }
-                checkClaimStatus();
-            } catch (error) {
-                console.error("Update UI error:", error);
-                status.textContent = "Failed to load UI data.";
-            }
-        }
-
-        async function checkClaimStatus() {
-            if (!account) {
-                claimButton.disabled = true;
-                claimButton.classList.remove("enabled");
-                status.textContent = "Connect your wallet to start.";
-                return;
-            }
-            try {
-                const last = Number(await contract.lastClaim(account));
-                const cooldown = Number(await contract.cooldownPeriod());
-                const paused = await contract.paused();
-                const now = Math.floor(Date.now() / 1000);
-                const sponsors = await contract.getActiveSponsors();
-                const hasActiveSponsors = sponsors.some(s => s.donor !== "0x0000000000000000000000000000000000000000" && s.xProfile !== "");
-
-                if (paused) {
-                    claimButton.disabled = true;
-                    claimButton.classList.remove("enabled");
-                    status.textContent = "Claims are currently paused.";
-                } else if (now < last + cooldown) {
-                    claimButton.disabled = true;
-                    claimButton.classList.remove("enabled");
-                    const timeLeft = last + cooldown - now;
-                    status.textContent = `Cooldown active. Wait ${formatTime(timeLeft)}.`;
-                    startCooldownCountdown(last, cooldown);
-                } else if (!tasksCompleted.followTwitter || !tasksCompleted.likePost || (hasActiveSponsors && !tasksCompleted.followSponsors)) {
-                    claimButton.disabled = true;
-                    claimButton.classList.remove("enabled");
-                    status.textContent = "Complete all required tasks to claim.";
-                } else {
-                    claimButton.disabled = false;
-                    claimButton.classList.add("enabled");
-                    status.textContent = "Ready to claim your tokens!";
-                }
-            } catch (error) {
-                console.error("Check claim status error:", error);
-                status.textContent = "Error checking claim eligibility.";
-            }
-        }
-
-        function startCooldownCountdown(last, cooldown) {
-            const endTime = last + cooldown;
-            claimButton.textContent = "Claim Tokens";
-            const updateTimer = () => {
-                const now = Math.floor(Date.now() / 1000);
-                const remaining = endTime - now;
-                if (remaining > 0) {
-                    claimButton.textContent = `Next claim in ${formatTime(remaining)}`;
-                    setTimeout(updateTimer, 1000);
-                } else {
-                    claimButton.textContent = "Claim Tokens";
-                    checkClaimStatus();
-                }
-            };
-            updateTimer();
-        }
-
-        async function claimTokens() {
-            if (!tasksCompleted.connectWallet || !tasksCompleted.followTwitter || !tasksCompleted.likePost || !tasksCompleted.followSponsors) {
-                status.textContent = "Complete all required tasks first!";
-                return;
-            }
-            try {
-                claimButton.disabled = true;
-                claimSpinner.style.display = "block";
-                status.textContent = "Claiming tokens...";
-                const tx = await contract.claim({ gasLimit: 200000 });
-                await tx.wait();
-                status.textContent = "Tokens claimed successfully!";
-                tasksCompleted.followSponsors = false;
-                sponsorsFollowed = 0;
-                followProcessStarted = false;
-                updateTaskButtons();
-                await updateUI();
-            } catch (error) {
-                console.error("Claim error:", error);
-                status.textContent = error.reason || "Failed to claim tokens.";
-            } finally {
-                claimButton.disabled = false;
-                claimSpinner.style.display = "none";
-            }
-        }
-
-        async function donate() {
-            if (!account) {
-                status.textContent = "Please connect your wallet first!";
-                return;
-            }
-            const amount = donateAmount.value.trim();
-            if (!amount || parseFloat(amount) <= 0) {
-                status.textContent = "Enter a valid donation amount!";
-                return;
-            }
-            try {
-                donateButton.disabled = true;
-                donateSpinner.style.display = "block";
-                status.textContent = "Processing donation...";
-                const paused = await contract.paused();
-                if (paused) {
-                    status.textContent = "Donations are currently paused.";
-                    return;
-                }
-
-                const valueInWei = ethers.utils.parseEther(amount);
-                const sponsorAmounts = ["1000", "700", "500", "200", "100"];
-                const isSponsorAmount = sponsorAmounts.includes(amount);
-
-                if (isSponsorAmount) {
-                    let slotAvailable = false;
-                    let availableSlot = -1;
-                    for (let i = 0; i < 5; i++) {
-                        if (await contract.isSponsorSlotAvailable(i)) {
-                            slotAvailable = true;
-                            availableSlot = i;
-                            break;
+                for (let retry = 0; retry < retriesPerRpc; retry++) {
+                    try {
+                        const result = await method(...args);
+                        console.log(`Chamada bem-sucedida usando ${rpcUrl}`);
+                        await delay(REQUEST_DELAY); // Respeita o limite de taxa
+                        return result;
+                    } catch (error) {
+                        if (error.message.includes("429") && retry < retriesPerRpc - 1) {
+                            console.warn(`Tentativa ${retry + 1} falhou (429) em ${rpcUrl}. Tentando novamente em ${2 ** retry}s...`);
+                            await delay(1000 * (2 ** retry)); // Backoff exponencial
+                        } else {
+                            throw error;
                         }
                     }
-                    if (!slotAvailable) {
-                        status.textContent = "All sponsor slots are full!";
-                        return;
-                    }
                 }
-
-                const tx = await contract.deposit({ value: valueInWei, gasLimit: 200000 });
-                const receipt = await tx.wait();
-
-                if (isSponsorAmount && receipt.events.some(e => e.event === "NewSponsor")) {
-                    const sponsorLevels = ["Diamond", "Gold", "Silver", "Bronze", "Copper"];
-                    const sponsorIndex = sponsorAmounts.indexOf(amount);
-                    sponsorLevelSpan.textContent = sponsorLevels[sponsorIndex];
-                    sponsorModal.style.display = "block";
-                    modalOverlay.style.display = "block";
-                } else {
-                    status.textContent = "Thank you for your donation!";
-                }
-                await updateUI();
-                await loadSponsors();
             } catch (error) {
-                console.error("Donate error:", error);
-                status.textContent = error.reason || "Donation failed.";
-            } finally {
-                donateButton.disabled = false;
-                donateSpinner.style.display = "none";
-            }
-        }
-
-        async function submitSponsorProfile() {
-            const xProfile = xProfileInput.value.trim();
-            if (!xProfile.startsWith("https://x.com/")) {
-                modalStatus.textContent = "Enter a valid X profile URL!";
-                return;
-            }
-            try {
-                submitXProfile.disabled = true;
-                submitSpinner.style.display = "block";
-                modalStatus.textContent = "Submitting profile...";
-                const sponsors = await contract.getActiveSponsors();
-                const position = sponsors.findIndex(s => s.donor.toLowerCase() === account.toLowerCase() && s.xProfile === "");
-                if (position === -1) {
-                    modalStatus.textContent = "No sponsor slot found!";
-                    return;
+                lastError = error;
+                console.error(`Erro no RPC ${rpcUrl}: ${error.message}`);
+                if (rpcIndex === MONAD_TESTNET.rpcUrls.length - 1) {
+                    console.error("Todas as tentativas com todos os RPCs falharam.");
+                    throw lastError;
                 }
-                const tx = await contract.addSponsor(position, xProfile, { gasLimit: 200000 });
-                await tx.wait();
-                modalStatus.textContent = "Profile added successfully!";
-                closeModal();
-                await loadSponsors();
-            } catch (error) {
-                console.error("Submit sponsor profile error:", error);
-                modalStatus.textContent = error.reason || "Failed to submit profile.";
-            } finally {
-                submitXProfile.disabled = false;
-                submitSpinner.style.display = "none";
             }
         }
+    }
 
-        async function loadSponsors() {
-            try {
-                const sponsors = await contract.getActiveSponsors();
-                const sponsorClasses = ["sponsor-diamond", "sponsor-gold", "sponsor-silver", "sponsor-bronze", "sponsor-copper"];
-                const sponsorLevels = ["Diamond", "Gold", "Silver", "Bronze", "Copper"];
-                const sponsorIcons = ["fa-gem", "fa-trophy", "fa-medal", "fa-award", "fa-coins"];
-                const sponsorAmounts = ["1000", "700", "500", "200", "100"];
-                const sponsorDurations = [7 * 86400, 4 * 86400, 2 * 86400, 1 * 86400, 12 * 3600];
-                sponsorsList.innerHTML = "";
+    // Formatar tempo para exibição
+    function formatTime(seconds) {
+        if (seconds <= 0) return translations[currentLanguage]["expired"] || "Expired";
+        const days = Math.floor(seconds / 86400);
+        const hours = Math.floor((seconds % 86400) / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const secs = seconds % 60;
+        return `${days > 0 ? days + (currentLanguage === "en" ? "d " : "d ") : ""}${hours > 0 ? hours + (currentLanguage === "en" ? "h " : "h ") : ""}${minutes > 0 ? minutes + (currentLanguage === "en" ? "m " : "m ") : ""}${secs}${currentLanguage === "en" ? "s" : "s"}`.trim();
+    }
 
-                for (let i = 0; i < 5; i++) {
-                    const sponsor = sponsors[i];
-                    const amount = sponsorAmounts[i];
-                    const duration = sponsorDurations[i];
-                    if (sponsor.donor === "0x0000000000000000000000000000000000000000") {
-                        sponsorsList.innerHTML += `
-                            <div class="sponsor-item ${sponsorClasses[i]}">
-                                <div class="header">
-                                    <p><i class="fas ${sponsorIcons[i]}"></i> ${sponsorLevels[i]} Slot <span class="badge inactive"></span></p>
-                                    <button onclick="document.getElementById('donateAmount').value = '${amount}'; donate();">Donate</button>
-                                </div>
-                                <p><i class="fas fa-coins"></i> ${amount} MON</p>
-                                <p><i class="fas fa-clock"></i> ${i === 4 ? "12 hours" : `${duration / 86400} days`}</p>
-                                <div class="progress-bar"><div class="progress" style="width: 0%"></div></div>
-                            </div>`;
-                    } else {
-                        const timeLeft = Math.max(0, Number(sponsor.startTime) + Number(sponsor.duration) - Math.floor(Date.now() / 1000));
-                        const username = sponsor.xProfile.split("https://x.com/")[1] || "Unknown";
-                        const progressPercentage = (timeLeft / duration) * 100;
-                        sponsorsList.innerHTML += `
-                            <div class="sponsor-item ${sponsorClasses[i]}">
-                                <div class="header">
-                                    <p><i class="fas ${sponsorIcons[i]}"></i> @${username} (${sponsorLevels[i]}) <span class="badge active"></span></p>
-                                    <button onclick="handleSponsorFollow('${sponsor.xProfile}')">Follow</button>
-                                </div>
-                                <p><i class="fas fa-coins"></i> ${ethers.utils.formatEther(sponsor.amount)} MON</p>
-                                <p><i class="fas fa-clock"></i> Time left: <span id="timer-${i}">${formatTime(timeLeft)}</span></p>
-                                <div class="progress-bar"><div class="progress" id="progress-${i}" style="width: ${progressPercentage}%"></div></div>
-                            </div>`;
-                        if (timeLeft > 0) startTimer(i, timeLeft, duration);
-                    }
-                }
-                sponsorsList.innerHTML += `<button class="sponsor-info-button" onclick="document.getElementById('sponsor-info-modal').style.display = 'block'; document.getElementById('modal-overlay').style.display = 'block';">How It Works</button>`;
-            } catch (error) {
-                console.error("Load sponsors error:", error);
-                sponsorsList.innerHTML = "<p>Failed to load sponsors.</p>";
+    // Iniciar contagem regressiva do cooldown
+    function startCooldownCountdown(lastClaimTime, cooldown) {
+        const endTime = (lastClaimTime + cooldown) * 1000;
+        const interval = setInterval(() => {
+            const now = Date.now();
+            const timeLeft = Math.max(0, Math.floor((endTime - now) / 1000));
+            if (timeLeft > 0) {
+                status.textContent = translations[currentLanguage]["cooldown_active"].replace("{time}", formatTime(timeLeft));
+            } else {
+                clearInterval(interval);
+                checkClaimStatus();
             }
-        }
+        }, 1000);
+    }
 
-        function startTimer(index, timeLeft, duration) {
-            const timerSpan = document.getElementById(`timer-${index}`);
-            const progressBar = document.getElementById(`progress-${index}`);
-            let remaining = timeLeft;
-            const interval = setInterval(() => {
-                if (remaining <= 0) {
-                    clearInterval(interval);
-                    loadSponsors();
-                } else {
-                    remaining--;
-                    timerSpan.textContent = formatTime(remaining);
-                    const progressPercentage = (remaining / duration) * 100;
-                    progressBar.style.width = `${progressPercentage}%`;
-                }
-            }, 1000);
+    // Conectar carteira
+    async function connectWallet() {
+        if (!window.ethereum) {
+            status.textContent = translations[currentLanguage]["please_install_metamask"];
+            return;
         }
+        try {
+            provider = new ethers.providers.Web3Provider(window.ethereum);
+            await provider.send("eth_requestAccounts", []);
+            signer = provider.getSigner();
+            account = await signer.getAddress();
+            contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
 
-        function formatTime(seconds) {
-            if (seconds <= 0) return "Expired";
-            const days = Math.floor(seconds / 86400);
-            const hours = Math.floor((seconds % 86400) / 3600);
-            const minutes = Math.floor((seconds % 3600) / 60);
-            const secs = seconds % 60;
-            return `${days > 0 ? days + "d " : ""}${hours > 0 ? hours + "h " : ""}${minutes > 0 ? minutes + "m " : ""}${secs}s`.trim();
-        }
+            const network = await provider.getNetwork();
+            if (network.chainId !== 10143) {
+                await window.ethereum.request({ method: 'wallet_addEthereumChain', params: [MONAD_TESTNET] });
+            }
 
-        function disconnect() {
-            provider = null;
-            signer = null;
-            contract = null;
-            account = null;
-            tasksCompleted = { connectWallet: false, followTwitter: false, likePost: false, followSponsors: false };
-            sponsorsFollowed = 0;
-            totalActiveSponsors = 0;
-            followProcessStarted = false;
-            walletInfo.style.display = "none";
+            walletAddress.textContent = `${account.slice(0, 6)}...${account.slice(-4)}`;
+            walletInfo.style.display = "flex";
+            tasksCompleted.connectWallet = true;
+            saveTasksState();
+            localStorage.setItem("walletConnected", "true");
+            localStorage.setItem("lastActive", Date.now());
             updateTaskButtons();
+            await updateUI();
+            await checkClaimStatus();
+            await loadSponsors();
+            status.textContent = translations[currentLanguage]["wallet_connected"];
+            
+            window.ethereum.on('accountsChanged', () => location.reload());
+            window.ethereum.on('chainChanged', () => location.reload());
+        } catch (error) {
+            console.error("Connect wallet error:", error);
+            status.textContent = translations[currentLanguage]["failed_connect_wallet"];
+        }
+    }
+
+    // Atualizar interface do usuário
+    async function updateUI() {
+        try {
+            const balance = await callContractMethod(contract.getBalance.bind(contract));
+            const claimAmt = await callContractMethod(contract.claimAmount.bind(contract));
+            const cooldown = Number(await callContractMethod(contract.cooldownPeriod.bind(contract)));
+            available.textContent = ethers.utils.formatEther(balance) + " MON";
+            claimAmountEl.textContent = ethers.utils.formatEther(claimAmt) + " MON";
+            cooldownPeriodEl.textContent = formatTime(cooldown);
+            localStorage.setItem("cooldownPeriod", cooldown);
+            console.log("Cooldown atualizado na UI:", cooldown, "segundos");
+            if (account) {
+                const last = Number(await callContractMethod(contract.lastClaim.bind(contract), [account]));
+                lastClaim.textContent = last > 0 ? new Date(last * 1000).toLocaleString() : translations[currentLanguage]["none"];
+                localStorage.setItem("lastClaim", last);
+            }
             checkClaimStatus();
-            status.textContent = "Wallet disconnected.";
+        } catch (error) {
+            console.error("Update UI error:", error);
+            status.textContent = translations[currentLanguage]["failed_load_ui"];
+            cooldownPeriodEl.textContent = localStorage.getItem("cooldownPeriod") ? formatTime(Number(localStorage.getItem("cooldownPeriod"))) : "Erro";
         }
+    }
 
-        function copyAddress() {
-            navigator.clipboard.writeText(account).then(() => {
-                status.textContent = "Address copied to clipboard!";
-                setTimeout(() => status.textContent = "", 2000);
-            }).catch(() => {
-                status.textContent = "Failed to copy address.";
+    // Verificar elegibilidade para claim
+    async function checkClaimStatus() {
+        if (!account || !contract) {
+            claimButton.disabled = true;
+            claimButton.classList.remove("enabled");
+            status.textContent = translations[currentLanguage]["connect_wallet_to_start"];
+            return;
+        }
+        try {
+            const last = Number(localStorage.getItem("lastClaim")) || Number(await callContractMethod(contract.lastClaim.bind(contract), [account]));
+            const cooldown = Number(localStorage.getItem("cooldownPeriod")) || Number(await callContractMethod(contract.cooldownPeriod.bind(contract)));
+            const paused = await callContractMethod(contract.paused.bind(contract));
+            const now = Math.floor(Date.now() / 1000);
+            const sponsors = await callContractMethod(contract.getActiveSponsors.bind(contract));
+            const hasActiveSponsors = sponsors.some(s => s.donor !== "0x0000000000000000000000000000000000000000" && s.xProfile !== "");
+
+            console.log("Último claim:", last, "Cooldown:", cooldown, "Agora:", now);
+
+            if (paused) {
+                claimButton.disabled = true;
+                claimButton.classList.remove("enabled");
+                status.textContent = translations[currentLanguage]["claims_paused"];
+            } else if (now < last + cooldown) {
+                claimButton.disabled = true;
+                claimButton.classList.remove("enabled");
+                const timeLeft = last + cooldown - now;
+                status.textContent = translations[currentLanguage]["cooldown_active"].replace("{time}", formatTime(timeLeft));
+                startCooldownCountdown(last, cooldown);
+            } else if (!tasksCompleted.followTwitter || !tasksCompleted.likePost || (hasActiveSponsors && !tasksCompleted.followSponsors)) {
+                claimButton.disabled = true;
+                claimButton.classList.remove("enabled");
+                status.textContent = translations[currentLanguage]["complete_all_tasks"];
+            } else {
+                claimButton.disabled = false;
+                claimButton.classList.add("enabled");
+                status.textContent = translations[currentLanguage]["ready_to_claim"];
+            }
+        } catch (error) {
+            console.error("Erro ao verificar elegibilidade para claim:", error);
+            status.textContent = translations[currentLanguage]["error_checking_claim"];
+            claimButton.disabled = true;
+            claimButton.classList.remove("enabled");
+        }
+    }
+
+    // Fazer claim dos tokens
+    async function claimTokens() {
+        if (!account || !contract) return;
+        claimSpinner.style.display = "inline-block";
+        claimButton.disabled = true;
+        try {
+            const tx = await contract.claim();
+            status.textContent = "Transaction sent. Waiting for confirmation...";
+            await tx.wait();
+            status.textContent = translations[currentLanguage]["claim_released"];
+            claimButton.classList.remove("enabled");
+            await updateUI();
+        } catch (error) {
+            console.error("Claim error:", error);
+            status.textContent = "Error claiming tokens: " + (error.reason || error.message);
+        } finally {
+            claimSpinner.style.display = "none";
+            claimButton.disabled = false;
+        }
+    }
+
+    // Carregar sponsors
+    async function loadSponsors() {
+        try {
+            const sponsors = await callContractMethod(contract.getActiveSponsors.bind(contract));
+            sponsorsList.innerHTML = "";
+            totalActiveSponsors = 0;
+            sponsors.forEach((sponsor, index) => {
+                if (sponsor.donor !== "0x0000000000000000000000000000000000000000") {
+                    totalActiveSponsors++;
+                    const sponsorItem = document.createElement("div");
+                    sponsorItem.className = `sponsor-item sponsor-${["diamond", "gold", "silver", "bronze", "copper"][index]}`;
+                    const isActive = Number(sponsor.startTime) + Number(sponsor.duration) > Math.floor(Date.now() / 1000);
+                    sponsorItem.innerHTML = `
+                        <div class="header">
+                            <span>${sponsor.xProfile || "Anonymous"}</span>
+                            <span class="badge ${isActive ? "active" : "inactive"}"></span>
+                        </div>
+                        <p>${ethers.utils.formatEther(sponsor.amount)} MON</p>
+                        <p>${formatTime(Number(sponsor.duration))}</p>
+                    `;
+                    sponsorsList.appendChild(sponsorItem);
+                }
             });
+            updateTaskButtons();
+        } catch (error) {
+            console.error("Load sponsors error:", error);
+            status.textContent = "Failed to load sponsors.";
         }
+    }
 
-        window.addEventListener("load", async () => {
-            provider = new ethers.providers.JsonRpcProvider(MONAD_TESTNET.rpcUrls[0]);
-            contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, provider);
+    // Doação
+    async function donate() {
+        if (!account || !contract) return;
+        const amount = donateAmount.value;
+        if (!amount || amount <= 0) {
+            status.textContent = "Please enter a valid amount.";
+            return;
+        }
+        donateSpinner.style.display = "inline-block";
+        donateButton.disabled = true;
+        try {
+            const weiAmount = ethers.utils.parseEther(amount);
+            const tx = await contract.deposit({ value: weiAmount });
+            status.textContent = "Donation sent. Waiting for confirmation...";
+            await tx.wait();
+            const sponsorLevels = [
+                { name: "Diamond", amount: 1000, duration: 7 * 24 * 3600 },
+                { name: "Gold", amount: 700, duration: 4 * 24 * 3600 },
+                { name: "Silver", amount: 500, duration: 2 * 24 * 3600 },
+                { name: "Bronze", amount: 200, duration: 24 * 3600 },
+                { name: "Copper", amount: 100, duration: 12 * 3600 }
+            ];
+            const level = sponsorLevels.find(l => parseFloat(amount) >= l.amount) || sponsorLevels[sponsorLevels.length - 1];
+            sponsorLevelSpan.textContent = level.name;
+            sponsorModal.style.display = "block";
+            modalOverlay.style.display = "block";
+            status.textContent = "Donation successful!";
             await updateUI();
             await loadSponsors();
+        } catch (error) {
+            console.error("Donate error:", error);
+            status.textContent = "Error donating: " + (error.reason || error.message);
+        } finally {
+            donateSpinner.style.display = "none";
+            donateButton.disabled = false;
+        }
+    }
+
+    // Enviar perfil X como sponsor
+    async function submitXProfileFunc() {
+        if (!account || !contract) return;
+        const xProfile = xProfileInput.value.trim();
+        if (!xProfile) {
+            modalStatus.textContent = "Please enter a valid X profile URL.";
+            return;
+        }
+        submitSpinner.style.display = "inline-block";
+        submitXProfile.disabled = true;
+        try {
+            const amount = ethers.utils.parseEther(donateAmount.value);
+            const sponsorLevels = [
+                { amount: 1000, position: 0 },
+                { amount: 700, position: 1 },
+                { amount: 500, position: 2 },
+                { amount: 200, position: 3 },
+                { amount: 100, position: 4 }
+            ];
+            const level = sponsorLevels.find(l => parseFloat(donateAmount.value) >= l.amount) || sponsorLevels[sponsorLevels.length - 1];
+            const tx = await contract.addSponsor(level.position, xProfile);
+            modalStatus.textContent = "Submitting profile...";
+            await tx.wait();
+            modalStatus.textContent = "Profile submitted successfully!";
+            sponsorModal.style.display = "none";
+            modalOverlay.style.display = "none";
+            await loadSponsors();
+        } catch (error) {
+            console.error("Submit X profile error:", error);
+            modalStatus.textContent = "Error submitting profile: " + (error.reason || error.message);
+        } finally {
+            submitSpinner.style.display = "none";
+            submitXProfile.disabled = false;
+        }
+    }
+
+    // Rotação de anúncios
+    function rotateAds() {
+        const ad = ads[currentAdIndex];
+        document.getElementById("adLink").href = ad.url;
+        document.getElementById("adImage").src = ad.image;
+        currentAdIndex = (currentAdIndex + 1) % ads.length;
+    }
+
+    // Atualizar estado dos botões de tarefas
+    function updateTaskButtons() {
+        followTwitterButton.disabled = tasksCompleted.followTwitter;
+        likePostButton.disabled = tasksCompleted.likePost;
+        followSponsorsButton.disabled = tasksCompleted.followSponsors || totalActiveSponsors === 0;
+        if (tasksCompleted.followTwitter) followTwitterButton.classList.add("enabled");
+        if (tasksCompleted.likePost) likePostButton.classList.add("enabled");
+        if (tasksCompleted.followSponsors || totalActiveSponsors === 0) followSponsorsButton.classList.add("enabled");
+    }
+
+    // Salvar estado das tarefas
+    function saveTasksState() {
+        localStorage.setItem("tasksCompleted", JSON.stringify(tasksCompleted));
+    }
+
+    // Carregar estado das tarefas
+    function loadTasksState() {
+        const savedTasks = localStorage.getItem("tasksCompleted");
+        if (savedTasks) {
+            tasksCompleted = JSON.parse(savedTasks);
+            updateTaskButtons();
+        }
+    }
+
+    // Verificar conexão inicial
+    async function checkConnection() {
+        if (localStorage.getItem("walletConnected") === "true" && window.ethereum) {
+            await connectWallet();
+        }
+    }
+
+    // Alterar idioma
+    function changeLanguage(lang) {
+        currentLanguage = lang;
+        localStorage.setItem("language", lang);
+        document.querySelectorAll("[data-i18n]").forEach(elem => {
+            const key = elem.getAttribute("data-i18n");
+            if (elem.tagName === "INPUT" && elem.hasAttribute("data-i18n-placeholder")) {
+                elem.placeholder = translations[lang][elem.getAttribute("data-i18n-placeholder")] || "";
+            } else {
+                elem.textContent = translations[lang][key] || elem.textContent;
+            }
         });
+        updateUI();
+        checkClaimStatus();
+    }
 
-        const canvas = document.querySelector("canvas");
-        const ctx = canvas.getContext("2d");
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-
-        class Particle {
-            constructor() {
-                this.x = Math.random() * canvas.width;
-                this.y = Math.random() * canvas.height;
-                this.size = Math.random() * 2 + 0.5;
-                this.speedX = Math.random() * 0.3 - 0.15;
-                this.speedY = Math.random() * 0.3 - 0.15;
-                this.color = `rgba(${Math.random() * 100 + 155}, ${Math.random() * 100 + 155}, 255, 0.1)`;
-            }
-            update() {
-                this.x += this.speedX;
-                this.y += this.speedY;
-                if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
-                if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
-            }
-            draw() {
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fillStyle = this.color;
-                ctx.fill();
-            }
+    // Listeners de eventos
+    connectWalletButton.addEventListener("click", connectWallet);
+    followTwitterButton.addEventListener("click", () => {
+        window.open("https://x.com/_roneslira", "_blank");
+        setTimeout(() => {
+            tasksCompleted.followTwitter = true;
+            saveTasksState();
+            updateTaskButtons();
+            checkClaimStatus();
+        }, 5000);
+    });
+    likePostButton.addEventListener("click", () => {
+        window.open("https://x.com/_roneslira/status/1860113877735416148", "_blank");
+        setTimeout(() => {
+            tasksCompleted.likePost = true;
+            saveTasksState();
+            updateTaskButtons();
+            checkClaimStatus();
+        }, 5000);
+    });
+    followSponsorsButton.addEventListener("click", () => {
+        if (totalActiveSponsors === 0) {
+            tasksCompleted.followSponsors = true;
+            saveTasksState();
+            updateTaskButtons();
+            checkClaimStatus();
+            return;
         }
-
-        const particles = [];
-        for (let i = 0; i < 30; i++) particles.push(new Particle());
-
-        let lastFrame = 0;
-        function animate(timestamp) {
-            if (timestamp - lastFrame < 1000 / 30) {
-                requestAnimationFrame(animate);
-                return;
-            }
-            lastFrame = timestamp;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            particles.forEach(p => {
-                p.update();
-                p.draw();
-            });
-            requestAnimationFrame(animate);
+        if (!followProcessStarted) {
+            followProcessStarted = true;
+            followSpinner.style.display = "inline-block";
+            followSponsorsText.textContent = translations[currentLanguage]["follow"];
+            followButtonClicks = 0;
         }
+        const sponsorLinks = Array.from(sponsorsList.querySelectorAll(".sponsor-item span:first-child"))
+            .map(span => span.textContent.startsWith("http") ? span.textContent : `https://x.com/${span.textContent}`);
+        if (followButtonClicks < totalActiveSponsors) {
+            window.open(sponsorLinks[followButtonClicks], "_blank");
+            followButtonClicks++;
+            const progress = (followButtonClicks / totalActiveSponsors) * 100;
+            followSponsorsButton.style.background = `linear-gradient(to right, #28a745 ${progress}%, #1a73e8 ${progress}%)`;
+        }
+        if (followButtonClicks === totalActiveSponsors) {
+            setTimeout(() => {
+                tasksCompleted.followSponsors = true;
+                followProcessStarted = false;
+                followSpinner.style.display = "none";
+                followSponsorsText.textContent = translations[currentLanguage]["follow_sponsors"];
+                saveTasksState();
+                updateTaskButtons();
+                checkClaimStatus();
+                followSponsorsButton.style.background = "#28a745";
+            }, 5000);
+        }
+    });
+    claimButton.addEventListener("click", claimTokens);
+    disconnectWallet.addEventListener("click", () => {
+        localStorage.removeItem("walletConnected");
+        tasksCompleted.connectWallet = false;
+        saveTasksState();
+        walletInfo.style.display = "none";
+        account = null;
+        signer = null;
+        updateTaskButtons();
+        checkClaimStatus();
+        status.textContent = translations[currentLanguage]["connect_wallet_to_start"];
+    });
+    copyWallet.addEventListener("click", () => {
+        navigator.clipboard.writeText(account);
+        status.textContent = "Address copied to clipboard!";
+        setTimeout(() => status.textContent = "", 2000);
+    });
+    donateButton.addEventListener("click", donate);
+    submitXProfile.addEventListener("click", submitXProfileFunc);
+    document.querySelectorAll(".language-flag").forEach(flag => {
+        flag.addEventListener("click", () => changeLanguage(flag.getAttribute("data-lang")));
+    });
+    aboutLink.addEventListener("click", (e) => {
+        e.preventDefault();
+        aboutModal.style.display = "block";
+        modalOverlay.style.display = "block";
+    });
+    contactLink.addEventListener("click", (e) => {
+        e.preventDefault();
+        contactModal.style.display = "block";
+        modalOverlay.style.display = "block";
+    });
+    termsLink.addEventListener("click", (e) => {
+        e.preventDefault();
+        termsModal.style.display = "block";
+        modalOverlay.style.display = "block";
+    });
+    closeAbout.addEventListener("click", () => {
+        aboutModal.style.display = "none";
+        modalOverlay.style.display = "none";
+    });
+    closeContact.addEventListener("click", () => {
+        contactModal.style.display = "none";
+        modalOverlay.style.display = "none";
+    });
+    closeTerms.addEventListener("click", () => {
+        termsModal.style.display = "none";
+        modalOverlay.style.display = "none";
+    });
+    closeSponsorInfo.addEventListener("click", () => {
+        sponsorInfoModal.style.display = "none";
+        modalOverlay.style.display = "none";
+    });
+    modalOverlay.addEventListener("click", () => {
+        confirmationModal.style.display = "none";
+        sponsorModal.style.display = "none";
+        sponsorInfoModal.style.display = "none";
+        aboutModal.style.display = "none";
+        contactModal.style.display = "none";
+        termsModal.style.display = "none";
+        modalOverlay.style.display = "none";
+    });
 
-        window.addEventListener("resize", debounce(() => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }, 100));
+    // Inicialização
+    window.addEventListener("load", async () => {
+        loadTasksState();
+        provider = await getProviderWithFailover(MONAD_TESTNET.rpcUrls);
+        contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, provider);
+        await checkConnection();
+        await updateUI();
+        await loadSponsors();
+        rotateAds();
+        setInterval(rotateAds, 5000);
+        changeLanguage(currentLanguage);
+    });
 
-        animate(0);
-    </script>
+    // Monitorar inatividade
+    let inactivityTimeout;
+    function resetInactivityTimer() {
+        clearTimeout(inactivityTimeout);
+        inactivityTimeout = setTimeout(() => {
+            if (localStorage.getItem("walletConnected") === "true") {
+                disconnectWallet.click();
+                status.textContent = "Disconnected due to inactivity.";
+            }
+        }, INACTIVITY_TIMEOUT);
+    }
+    document.addEventListener("mousemove", resetInactivityTimer);
+    document.addEventListener("keypress", resetInactivityTimer);
+    resetInactivityTimer();
+</script>
 </body>
 </html>
