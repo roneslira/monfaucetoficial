@@ -388,17 +388,16 @@
             {"stateMutability":"payable","type":"receive"}
         ];
         const MONAD_TESTNET = {
-            chainId: '0x279F', // 10143
+            chainId: '0x279F',
             chainName: 'Monad Testnet',
             rpcUrls: [
-                'https://testnet-rpc.monad.xyz/',      // RPC original
-                'https://monad-testnet.drpc.org',      // Novo RPC 1
-                'https://testnet-rpc.monad.xyz'        // Novo RPC 2 (mesmo domínio, sem barra final)
+                'https://testnet-rpc.monad.xyz/',
+                'https://monad-testnet.drpc.org',
+                'https://testnet-rpc.monad.xyz'
             ],
             nativeCurrency: { name: 'MON', symbol: 'MON', decimals: 18 },
             blockExplorerUrls: ['https://testnet.monadexplorer.com/']
         };
-
         const translations = {
             en: {
                 claim_mon_tokens: "Claim MON tokens on Monad Testnet",
@@ -515,7 +514,6 @@
                 none: "Nenhum"
             }
         };
-
         const ads = [
             { url: "https://airdropsmanager.com/", image: "https://i.imgur.com/NgWonX9.png" },
             { url: "https://example1.com", image: "https://via.placeholder.com/300x600?text=Ad+1" },
@@ -533,7 +531,7 @@
         let followButtonClicks = 0;
         let currentLanguage = localStorage.getItem("language") || "en";
         const INACTIVITY_TIMEOUT = 30 * 60 * 1000;
-        const REQUEST_DELAY = 1100; // Atraso de 1.1s entre requisições
+        const REQUEST_DELAY = 1100;
 
         const connectWalletButton = document.getElementById("connectWalletButton");
         const followTwitterButton = document.getElementById("followTwitterButton");
@@ -576,523 +574,518 @@
         const closeAbout = document.getElementById("close-about");
         const closeContact = document.getElementById("close-contact");
         const closeTerms = document.getElementById("close-terms");
-    </script>
-    <script>
-    // Função para atrasar requisições
-    const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-    // Função para criar um provider com failover entre múltiplos RPCs
-    async function getProviderWithFailover(rpcUrls) {
-        for (let i = 0; i < rpcUrls.length; i++) {
-            const rpcUrl = rpcUrls[i];
-            try {
-                const tempProvider = new ethers.providers.JsonRpcProvider(rpcUrl);
-                const blockNumber = await tempProvider.getBlockNumber();
-                console.log(`RPC ${rpcUrl} funcionando. Bloco: ${blockNumber}`);
-                return tempProvider;
-            } catch (error) {
-                console.warn(`RPC ${rpcUrl} falhou: ${error.message}. Tentando próximo...`);
-                if (i === rpcUrls.length - 1) {
-                    throw new Error("Todos os RPCs falharam.");
+        // Função para atrasar requisições
+        const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+        // Função para criar um provider com failover entre múltiplos RPCs
+        async function getProviderWithFailover(rpcUrls) {
+            for (let i = 0; i < rpcUrls.length; i++) {
+                const rpcUrl = rpcUrls[i];
+                try {
+                    const tempProvider = new ethers.providers.JsonRpcProvider(rpcUrl);
+                    const blockNumber = await tempProvider.getBlockNumber();
+                    console.log(`RPC ${rpcUrl} funcionando. Bloco: ${blockNumber}`);
+                    return tempProvider;
+                } catch (error) {
+                    console.warn(`RPC ${rpcUrl} falhou: ${error.message}. Tentando próximo...`);
+                    if (i === rpcUrls.length - 1) {
+                        throw new Error("Todos os RPCs falharam.");
+                    }
+                    await delay(500);
                 }
-                await delay(500); // Pequeno atraso antes de tentar o próximo
             }
         }
-    }
 
-    // Função para chamadas ao contrato com failover e retry
-    async function callContractMethod(method, args = [], retriesPerRpc = 3) {
-        let lastError;
-        for (let rpcIndex = 0; rpcIndex < MONAD_TESTNET.rpcUrls.length; rpcIndex++) {
-            const rpcUrl = MONAD_TESTNET.rpcUrls[rpcIndex];
-            try {
-                if (!provider || provider.connection.url !== rpcUrl) {
-                    provider = new ethers.providers.JsonRpcProvider(rpcUrl);
-                    contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer || provider);
-                }
-                for (let retry = 0; retry < retriesPerRpc; retry++) {
-                    try {
-                        const result = await method(...args);
-                        console.log(`Chamada bem-sucedida usando ${rpcUrl}`);
-                        await delay(REQUEST_DELAY); // Respeita o limite de taxa
-                        return result;
-                    } catch (error) {
-                        if (error.message.includes("429") && retry < retriesPerRpc - 1) {
-                            console.warn(`Tentativa ${retry + 1} falhou (429) em ${rpcUrl}. Tentando novamente em ${2 ** retry}s...`);
-                            await delay(1000 * (2 ** retry)); // Backoff exponencial
-                        } else {
-                            throw error;
+        // Função para chamadas ao contrato com failover e retry
+        async function callContractMethod(method, args = [], retriesPerRpc = 3) {
+            let lastError;
+            for (let rpcIndex = 0; rpcIndex < MONAD_TESTNET.rpcUrls.length; rpcIndex++) {
+                const rpcUrl = MONAD_TESTNET.rpcUrls[rpcIndex];
+                try {
+                    if (!provider || provider.connection.url !== rpcUrl) {
+                        provider = new ethers.providers.JsonRpcProvider(rpcUrl);
+                        contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer || provider);
+                    }
+                    for (let retry = 0; retry < retriesPerRpc; retry++) {
+                        try {
+                            const result = await method(...args);
+                            console.log(`Chamada bem-sucedida usando ${rpcUrl}`);
+                            await delay(REQUEST_DELAY);
+                            return result;
+                        } catch (error) {
+                            if (error.message.includes("429") && retry < retriesPerRpc - 1) {
+                                console.warn(`Tentativa ${retry + 1} falhou (429) em ${rpcUrl}. Tentando novamente em ${2 ** retry}s...`);
+                                await delay(1000 * (2 ** retry));
+                            } else {
+                                throw error;
+                            }
                         }
                     }
+                } catch (error) {
+                    lastError = error;
+                    console.error(`Erro no RPC ${rpcUrl}: ${error.message}`);
+                    if (rpcIndex === MONAD_TESTNET.rpcUrls.length - 1) {
+                        console.error("Todas as tentativas com todos os RPCs falharam.");
+                        throw lastError;
+                    }
+                }
+            }
+        }
+
+        // Formatar tempo para exibição
+        function formatTime(seconds) {
+            if (seconds <= 0) return translations[currentLanguage]["expired"];
+            const days = Math.floor(seconds / 86400);
+            const hours = Math.floor((seconds % 86400) / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const secs = seconds % 60;
+            return `${days > 0 ? days + (currentLanguage === "en" ? "d " : "d ") : ""}${hours > 0 ? hours + (currentLanguage === "en" ? "h " : "h ") : ""}${minutes > 0 ? minutes + (currentLanguage === "en" ? "m " : "m ") : ""}${secs}${currentLanguage === "en" ? "s" : "s"}`.trim();
+        }
+
+        // Iniciar contagem regressiva do cooldown
+        function startCooldownCountdown(lastClaimTime, cooldown) {
+            const endTime = (lastClaimTime + cooldown) * 1000;
+            const interval = setInterval(() => {
+                const now = Date.now();
+                const timeLeft = Math.max(0, Math.floor((endTime - now) / 1000));
+                if (timeLeft > 0) {
+                    status.textContent = translations[currentLanguage]["cooldown_active"].replace("{time}", formatTime(timeLeft));
+                } else {
+                    clearInterval(interval);
+                    checkClaimStatus();
+                }
+            }, 1000);
+        }
+
+        // Conectar carteira
+        async function connectWallet() {
+            if (!window.ethereum) {
+                status.textContent = translations[currentLanguage]["please_install_metamask"];
+                return;
+            }
+            try {
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+                await provider.send("eth_requestAccounts", []);
+                signer = provider.getSigner();
+                account = await signer.getAddress();
+                contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+
+                const network = await provider.getNetwork();
+                if (network.chainId !== 10143) {
+                    await window.ethereum.request({ method: 'wallet_addEthereumChain', params: [MONAD_TESTNET] });
+                }
+
+                walletAddress.textContent = `${account.slice(0, 6)}...${account.slice(-4)}`;
+                walletInfo.style.display = "flex";
+                tasksCompleted.connectWallet = true;
+                saveTasksState();
+                localStorage.setItem("walletConnected", "true");
+                localStorage.setItem("lastActive", Date.now());
+                updateTaskButtons();
+                await updateUI();
+                await checkClaimStatus();
+                await loadSponsors();
+                status.textContent = translations[currentLanguage]["wallet_connected"];
+                
+                window.ethereum.on('accountsChanged', () => location.reload());
+                window.ethereum.on('chainChanged', () => location.reload());
+            } catch (error) {
+                console.error("Connect wallet error:", error);
+                status.textContent = translations[currentLanguage]["failed_connect_wallet"];
+            }
+        }
+
+        // Atualizar interface do usuário
+        async function updateUI() {
+            try {
+                const balance = await callContractMethod(contract.getBalance.bind(contract));
+                const claimAmt = await callContractMethod(contract.claimAmount.bind(contract));
+                const cooldown = Number(await callContractMethod(contract.cooldownPeriod.bind(contract)));
+                available.textContent = ethers.utils.formatEther(balance) + " MON";
+                claimAmountEl.textContent = ethers.utils.formatEther(claimAmt) + " MON";
+                cooldownPeriodEl.textContent = formatTime(cooldown);
+                localStorage.setItem("cooldownPeriod", cooldown);
+                if (account) {
+                    const last = Number(await callContractMethod(contract.lastClaim.bind(contract), [account]));
+                    lastClaim.textContent = last > 0 ? new Date(last * 1000).toLocaleString() : translations[currentLanguage]["none"];
+                    localStorage.setItem("lastClaim", last);
+                }
+                checkClaimStatus();
+            } catch (error) {
+                console.error("Update UI error:", error);
+                status.textContent = translations[currentLanguage]["failed_load_ui"];
+            }
+        }
+
+        // Verificar elegibilidade para claim
+        async function checkClaimStatus() {
+            if (!account || !contract) {
+                claimButton.disabled = true;
+                claimButton.classList.remove("enabled");
+                status.textContent = translations[currentLanguage]["connect_wallet_to_start"];
+                return;
+            }
+            try {
+                const last = Number(localStorage.getItem("lastClaim")) || Number(await callContractMethod(contract.lastClaim.bind(contract), [account]));
+                const cooldown = Number(localStorage.getItem("cooldownPeriod")) || Number(await callContractMethod(contract.cooldownPeriod.bind(contract)));
+                const paused = await callContractMethod(contract.paused.bind(contract));
+                const now = Math.floor(Date.now() / 1000);
+                const sponsors = await callContractMethod(contract.getActiveSponsors.bind(contract));
+                const hasActiveSponsors = sponsors.some(s => s.donor !== "0x0000000000000000000000000000000000000000" && s.xProfile !== "");
+
+                if (paused) {
+                    claimButton.disabled = true;
+                    claimButton.classList.remove("enabled");
+                    status.textContent = translations[currentLanguage]["claims_paused"];
+                } else if (now < last + cooldown) {
+                    claimButton.disabled = true;
+                    claimButton.classList.remove("enabled");
+                    const timeLeft = last + cooldown - now;
+                    status.textContent = translations[currentLanguage]["cooldown_active"].replace("{time}", formatTime(timeLeft));
+                    startCooldownCountdown(last, cooldown);
+                } else if (!tasksCompleted.followTwitter || !tasksCompleted.likePost || (hasActiveSponsors && !tasksCompleted.followSponsors)) {
+                    claimButton.disabled = true;
+                    claimButton.classList.remove("enabled");
+                    status.textContent = translations[currentLanguage]["complete_all_tasks"];
+                } else {
+                    claimButton.disabled = false;
+                    claimButton.classList.add("enabled");
+                    status.textContent = translations[currentLanguage]["ready_to_claim"];
                 }
             } catch (error) {
-                lastError = error;
-                console.error(`Erro no RPC ${rpcUrl}: ${error.message}`);
-                if (rpcIndex === MONAD_TESTNET.rpcUrls.length - 1) {
-                    console.error("Todas as tentativas com todos os RPCs falharam.");
-                    throw lastError;
-                }
+                console.error("Erro ao verificar elegibilidade:", error);
+                status.textContent = translations[currentLanguage]["error_checking_claim"];
+                claimButton.disabled = true;
+                claimButton.classList.remove("enabled");
             }
         }
-    }
 
-    // Formatar tempo para exibição
-    function formatTime(seconds) {
-        if (seconds <= 0) return translations[currentLanguage]["expired"] || "Expired";
-        const days = Math.floor(seconds / 86400);
-        const hours = Math.floor((seconds % 86400) / 3600);
-        const minutes = Math.floor((seconds % 3600) / 60);
-        const secs = seconds % 60;
-        return `${days > 0 ? days + (currentLanguage === "en" ? "d " : "d ") : ""}${hours > 0 ? hours + (currentLanguage === "en" ? "h " : "h ") : ""}${minutes > 0 ? minutes + (currentLanguage === "en" ? "m " : "m ") : ""}${secs}${currentLanguage === "en" ? "s" : "s"}`.trim();
-    }
-
-    // Iniciar contagem regressiva do cooldown
-    function startCooldownCountdown(lastClaimTime, cooldown) {
-        const endTime = (lastClaimTime + cooldown) * 1000;
-        const interval = setInterval(() => {
-            const now = Date.now();
-            const timeLeft = Math.max(0, Math.floor((endTime - now) / 1000));
-            if (timeLeft > 0) {
-                status.textContent = translations[currentLanguage]["cooldown_active"].replace("{time}", formatTime(timeLeft));
-            } else {
-                clearInterval(interval);
-                checkClaimStatus();
-            }
-        }, 1000);
-    }
-
-    // Conectar carteira
-    async function connectWallet() {
-        if (!window.ethereum) {
-            status.textContent = translations[currentLanguage]["please_install_metamask"];
-            return;
-        }
-        try {
-            provider = new ethers.providers.Web3Provider(window.ethereum);
-            await provider.send("eth_requestAccounts", []);
-            signer = provider.getSigner();
-            account = await signer.getAddress();
-            contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
-
-            const network = await provider.getNetwork();
-            if (network.chainId !== 10143) {
-                await window.ethereum.request({ method: 'wallet_addEthereumChain', params: [MONAD_TESTNET] });
-            }
-
-            walletAddress.textContent = `${account.slice(0, 6)}...${account.slice(-4)}`;
-            walletInfo.style.display = "flex";
-            tasksCompleted.connectWallet = true;
-            saveTasksState();
-            localStorage.setItem("walletConnected", "true");
-            localStorage.setItem("lastActive", Date.now());
-            updateTaskButtons();
-            await updateUI();
-            await checkClaimStatus();
-            await loadSponsors();
-            status.textContent = translations[currentLanguage]["wallet_connected"];
-            
-            window.ethereum.on('accountsChanged', () => location.reload());
-            window.ethereum.on('chainChanged', () => location.reload());
-        } catch (error) {
-            console.error("Connect wallet error:", error);
-            status.textContent = translations[currentLanguage]["failed_connect_wallet"];
-        }
-    }
-
-    // Atualizar interface do usuário
-    async function updateUI() {
-        try {
-            const balance = await callContractMethod(contract.getBalance.bind(contract));
-            const claimAmt = await callContractMethod(contract.claimAmount.bind(contract));
-            const cooldown = Number(await callContractMethod(contract.cooldownPeriod.bind(contract)));
-            available.textContent = ethers.utils.formatEther(balance) + " MON";
-            claimAmountEl.textContent = ethers.utils.formatEther(claimAmt) + " MON";
-            cooldownPeriodEl.textContent = formatTime(cooldown);
-            localStorage.setItem("cooldownPeriod", cooldown);
-            console.log("Cooldown atualizado na UI:", cooldown, "segundos");
-            if (account) {
-                const last = Number(await callContractMethod(contract.lastClaim.bind(contract), [account]));
-                lastClaim.textContent = last > 0 ? new Date(last * 1000).toLocaleString() : translations[currentLanguage]["none"];
-                localStorage.setItem("lastClaim", last);
-            }
-            checkClaimStatus();
-        } catch (error) {
-            console.error("Update UI error:", error);
-            status.textContent = translations[currentLanguage]["failed_load_ui"];
-            cooldownPeriodEl.textContent = localStorage.getItem("cooldownPeriod") ? formatTime(Number(localStorage.getItem("cooldownPeriod"))) : "Erro";
-        }
-    }
-
-    // Verificar elegibilidade para claim
-    async function checkClaimStatus() {
-        if (!account || !contract) {
+        // Fazer claim dos tokens
+        async function claimTokens() {
+            if (!account || !contract) return;
+            claimSpinner.style.display = "inline-block";
             claimButton.disabled = true;
-            claimButton.classList.remove("enabled");
-            status.textContent = translations[currentLanguage]["connect_wallet_to_start"];
-            return;
-        }
-        try {
-            const last = Number(localStorage.getItem("lastClaim")) || Number(await callContractMethod(contract.lastClaim.bind(contract), [account]));
-            const cooldown = Number(localStorage.getItem("cooldownPeriod")) || Number(await callContractMethod(contract.cooldownPeriod.bind(contract)));
-            const paused = await callContractMethod(contract.paused.bind(contract));
-            const now = Math.floor(Date.now() / 1000);
-            const sponsors = await callContractMethod(contract.getActiveSponsors.bind(contract));
-            const hasActiveSponsors = sponsors.some(s => s.donor !== "0x0000000000000000000000000000000000000000" && s.xProfile !== "");
-
-            console.log("Último claim:", last, "Cooldown:", cooldown, "Agora:", now);
-
-            if (paused) {
-                claimButton.disabled = true;
+            try {
+                const tx = await contract.claim();
+                status.textContent = "Transaction sent. Waiting for confirmation...";
+                await tx.wait();
+                status.textContent = translations[currentLanguage]["claim_released"];
                 claimButton.classList.remove("enabled");
-                status.textContent = translations[currentLanguage]["claims_paused"];
-            } else if (now < last + cooldown) {
-                claimButton.disabled = true;
-                claimButton.classList.remove("enabled");
-                const timeLeft = last + cooldown - now;
-                status.textContent = translations[currentLanguage]["cooldown_active"].replace("{time}", formatTime(timeLeft));
-                startCooldownCountdown(last, cooldown);
-            } else if (!tasksCompleted.followTwitter || !tasksCompleted.likePost || (hasActiveSponsors && !tasksCompleted.followSponsors)) {
-                claimButton.disabled = true;
-                claimButton.classList.remove("enabled");
-                status.textContent = translations[currentLanguage]["complete_all_tasks"];
-            } else {
+                await updateUI();
+            } catch (error) {
+                console.error("Claim error:", error);
+                status.textContent = "Error claiming tokens: " + (error.reason || error.message);
+            } finally {
+                claimSpinner.style.display = "none";
                 claimButton.disabled = false;
-                claimButton.classList.add("enabled");
-                status.textContent = translations[currentLanguage]["ready_to_claim"];
             }
-        } catch (error) {
-            console.error("Erro ao verificar elegibilidade para claim:", error);
-            status.textContent = translations[currentLanguage]["error_checking_claim"];
-            claimButton.disabled = true;
-            claimButton.classList.remove("enabled");
         }
-    }
 
-    // Fazer claim dos tokens
-    async function claimTokens() {
-        if (!account || !contract) return;
-        claimSpinner.style.display = "inline-block";
-        claimButton.disabled = true;
-        try {
-            const tx = await contract.claim();
-            status.textContent = "Transaction sent. Waiting for confirmation...";
-            await tx.wait();
-            status.textContent = translations[currentLanguage]["claim_released"];
-            claimButton.classList.remove("enabled");
-            await updateUI();
-        } catch (error) {
-            console.error("Claim error:", error);
-            status.textContent = "Error claiming tokens: " + (error.reason || error.message);
-        } finally {
-            claimSpinner.style.display = "none";
-            claimButton.disabled = false;
+        // Carregar sponsors
+        async function loadSponsors() {
+            try {
+                const sponsors = await callContractMethod(contract.getActiveSponsors.bind(contract));
+                sponsorsList.innerHTML = "";
+                totalActiveSponsors = 0;
+                sponsors.forEach((sponsor, index) => {
+                    if (sponsor.donor !== "0x0000000000000000000000000000000000000000") {
+                        totalActiveSponsors++;
+                        const sponsorItem = document.createElement("div");
+                        sponsorItem.className = `sponsor-item sponsor-${["diamond", "gold", "silver", "bronze", "copper"][index]}`;
+                        const isActive = Number(sponsor.startTime) + Number(sponsor.duration) > Math.floor(Date.now() / 1000);
+                        sponsorItem.innerHTML = `
+                            <div class="header">
+                                <span>${sponsor.xProfile || "Anonymous"}</span>
+                                <span class="badge ${isActive ? "active" : "inactive"}"></span>
+                            </div>
+                            <p>${ethers.utils.formatEther(sponsor.amount)} MON</p>
+                            <p>${formatTime(Number(sponsor.duration))}</p>
+                        `;
+                        sponsorsList.appendChild(sponsorItem);
+                    }
+                });
+                updateTaskButtons();
+            } catch (error) {
+                console.error("Load sponsors error:", error);
+                status.textContent = "Failed to load sponsors.";
+            }
         }
-    }
 
-    // Carregar sponsors
-    async function loadSponsors() {
-        try {
-            const sponsors = await callContractMethod(contract.getActiveSponsors.bind(contract));
-            sponsorsList.innerHTML = "";
-            totalActiveSponsors = 0;
-            sponsors.forEach((sponsor, index) => {
-                if (sponsor.donor !== "0x0000000000000000000000000000000000000000") {
-                    totalActiveSponsors++;
-                    const sponsorItem = document.createElement("div");
-                    sponsorItem.className = `sponsor-item sponsor-${["diamond", "gold", "silver", "bronze", "copper"][index]}`;
-                    const isActive = Number(sponsor.startTime) + Number(sponsor.duration) > Math.floor(Date.now() / 1000);
-                    sponsorItem.innerHTML = `
-                        <div class="header">
-                            <span>${sponsor.xProfile || "Anonymous"}</span>
-                            <span class="badge ${isActive ? "active" : "inactive"}"></span>
-                        </div>
-                        <p>${ethers.utils.formatEther(sponsor.amount)} MON</p>
-                        <p>${formatTime(Number(sponsor.duration))}</p>
-                    `;
-                    sponsorsList.appendChild(sponsorItem);
+        // Doação
+        async function donate() {
+            if (!account || !contract) return;
+            const amount = donateAmount.value;
+            if (!amount || amount <= 0) {
+                status.textContent = "Please enter a valid amount.";
+                return;
+            }
+            donateSpinner.style.display = "inline-block";
+            donateButton.disabled = true;
+            try {
+                const weiAmount = ethers.utils.parseEther(amount);
+                const tx = await contract.deposit({ value: weiAmount });
+                status.textContent = "Donation sent. Waiting for confirmation...";
+                await tx.wait();
+                const sponsorLevels = [
+                    { name: "Diamond", amount: 1000, duration: 7 * 24 * 3600 },
+                    { name: "Gold", amount: 700, duration: 4 * 24 * 3600 },
+                    { name: "Silver", amount: 500, duration: 2 * 24 * 3600 },
+                    { name: "Bronze", amount: 200, duration: 24 * 3600 },
+                    { name: "Copper", amount: 100, duration: 12 * 3600 }
+                ];
+                const level = sponsorLevels.find(l => parseFloat(amount) >= l.amount) || sponsorLevels[sponsorLevels.length - 1];
+                sponsorLevelSpan.textContent = level.name;
+                sponsorModal.style.display = "block";
+                modalOverlay.style.display = "block";
+                status.textContent = "Donation successful!";
+                await updateUI();
+                await loadSponsors();
+            } catch (error) {
+                console.error("Donate error:", error);
+                status.textContent = "Error donating: " + (error.reason || error.message);
+            } finally {
+                donateSpinner.style.display = "none";
+                donateButton.disabled = false;
+            }
+        }
+
+        // Enviar perfil X como sponsor
+        async function submitXProfileFunc() {
+            if (!account || !contract) return;
+            const xProfile = xProfileInput.value.trim();
+            if (!xProfile) {
+                modalStatus.textContent = "Please enter a valid X profile URL.";
+                return;
+            }
+            submitSpinner.style.display = "inline-block";
+            submitXProfile.disabled = true;
+            try {
+                const amount = ethers.utils.parseEther(donateAmount.value);
+                const sponsorLevels = [
+                    { amount: 1000, position: 0 },
+                    { amount: 700, position: 1 },
+                    { amount: 500, position: 2 },
+                    { amount: 200, position: 3 },
+                    { amount: 100, position: 4 }
+                ];
+                const level = sponsorLevels.find(l => parseFloat(donateAmount.value) >= l.amount) || sponsorLevels[sponsorLevels.length - 1];
+                const tx = await contract.addSponsor(level.position, xProfile);
+                modalStatus.textContent = "Submitting profile...";
+                await tx.wait();
+                modalStatus.textContent = "Profile submitted successfully!";
+                sponsorModal.style.display = "none";
+                modalOverlay.style.display = "none";
+                await loadSponsors();
+            } catch (error) {
+                console.error("Submit X profile error:", error);
+                modalStatus.textContent = "Error submitting profile: " + (error.reason || error.message);
+            } finally {
+                submitSpinner.style.display = "none";
+                submitXProfile.disabled = false;
+            }
+        }
+
+        // Rotação de anúncios
+        function rotateAds() {
+            const ad = ads[currentAdIndex];
+            document.getElementById("adLink").href = ad.url;
+            document.getElementById("adImage").src = ad.image;
+            currentAdIndex = (currentAdIndex + 1) % ads.length;
+        }
+
+        // Atualizar estado dos botões de tarefas
+        function updateTaskButtons() {
+            followTwitterButton.disabled = tasksCompleted.followTwitter;
+            likePostButton.disabled = tasksCompleted.likePost;
+            followSponsorsButton.disabled = tasksCompleted.followSponsors || totalActiveSponsors === 0;
+            if (tasksCompleted.followTwitter) followTwitterButton.classList.add("enabled");
+            if (tasksCompleted.likePost) likePostButton.classList.add("enabled");
+            if (tasksCompleted.followSponsors || totalActiveSponsors === 0) followSponsorsButton.classList.add("enabled");
+        }
+
+        // Salvar estado das tarefas
+        function saveTasksState() {
+            localStorage.setItem("tasksCompleted", JSON.stringify(tasksCompleted));
+        }
+
+        // Carregar estado das tarefas
+        function loadTasksState() {
+            const savedTasks = localStorage.getItem("tasksCompleted");
+            if (savedTasks) {
+                tasksCompleted = JSON.parse(savedTasks);
+                updateTaskButtons();
+            }
+        }
+
+        // Verificar conexão inicial
+        async function checkConnection() {
+            if (localStorage.getItem("walletConnected") === "true" && window.ethereum) {
+                await connectWallet();
+            }
+        }
+
+        // Alterar idioma
+        function changeLanguage(lang) {
+            currentLanguage = lang;
+            localStorage.setItem("language", lang);
+            document.querySelectorAll("[data-i18n]").forEach(elem => {
+                const key = elem.getAttribute("data-i18n");
+                if (elem.tagName === "INPUT" && elem.hasAttribute("data-i18n-placeholder")) {
+                    elem.placeholder = translations[lang][elem.getAttribute("data-i18n-placeholder")] || "";
+                } else {
+                    elem.textContent = translations[lang][key] || elem.textContent;
                 }
             });
-            updateTaskButtons();
-        } catch (error) {
-            console.error("Load sponsors error:", error);
-            status.textContent = "Failed to load sponsors.";
-        }
-    }
-
-    // Doação
-    async function donate() {
-        if (!account || !contract) return;
-        const amount = donateAmount.value;
-        if (!amount || amount <= 0) {
-            status.textContent = "Please enter a valid amount.";
-            return;
-        }
-        donateSpinner.style.display = "inline-block";
-        donateButton.disabled = true;
-        try {
-            const weiAmount = ethers.utils.parseEther(amount);
-            const tx = await contract.deposit({ value: weiAmount });
-            status.textContent = "Donation sent. Waiting for confirmation...";
-            await tx.wait();
-            const sponsorLevels = [
-                { name: "Diamond", amount: 1000, duration: 7 * 24 * 3600 },
-                { name: "Gold", amount: 700, duration: 4 * 24 * 3600 },
-                { name: "Silver", amount: 500, duration: 2 * 24 * 3600 },
-                { name: "Bronze", amount: 200, duration: 24 * 3600 },
-                { name: "Copper", amount: 100, duration: 12 * 3600 }
-            ];
-            const level = sponsorLevels.find(l => parseFloat(amount) >= l.amount) || sponsorLevels[sponsorLevels.length - 1];
-            sponsorLevelSpan.textContent = level.name;
-            sponsorModal.style.display = "block";
-            modalOverlay.style.display = "block";
-            status.textContent = "Donation successful!";
-            await updateUI();
-            await loadSponsors();
-        } catch (error) {
-            console.error("Donate error:", error);
-            status.textContent = "Error donating: " + (error.reason || error.message);
-        } finally {
-            donateSpinner.style.display = "none";
-            donateButton.disabled = false;
-        }
-    }
-
-    // Enviar perfil X como sponsor
-    async function submitXProfileFunc() {
-        if (!account || !contract) return;
-        const xProfile = xProfileInput.value.trim();
-        if (!xProfile) {
-            modalStatus.textContent = "Please enter a valid X profile URL.";
-            return;
-        }
-        submitSpinner.style.display = "inline-block";
-        submitXProfile.disabled = true;
-        try {
-            const amount = ethers.utils.parseEther(donateAmount.value);
-            const sponsorLevels = [
-                { amount: 1000, position: 0 },
-                { amount: 700, position: 1 },
-                { amount: 500, position: 2 },
-                { amount: 200, position: 3 },
-                { amount: 100, position: 4 }
-            ];
-            const level = sponsorLevels.find(l => parseFloat(donateAmount.value) >= l.amount) || sponsorLevels[sponsorLevels.length - 1];
-            const tx = await contract.addSponsor(level.position, xProfile);
-            modalStatus.textContent = "Submitting profile...";
-            await tx.wait();
-            modalStatus.textContent = "Profile submitted successfully!";
-            sponsorModal.style.display = "none";
-            modalOverlay.style.display = "none";
-            await loadSponsors();
-        } catch (error) {
-            console.error("Submit X profile error:", error);
-            modalStatus.textContent = "Error submitting profile: " + (error.reason || error.message);
-        } finally {
-            submitSpinner.style.display = "none";
-            submitXProfile.disabled = false;
-        }
-    }
-
-    // Rotação de anúncios
-    function rotateAds() {
-        const ad = ads[currentAdIndex];
-        document.getElementById("adLink").href = ad.url;
-        document.getElementById("adImage").src = ad.image;
-        currentAdIndex = (currentAdIndex + 1) % ads.length;
-    }
-
-    // Atualizar estado dos botões de tarefas
-    function updateTaskButtons() {
-        followTwitterButton.disabled = tasksCompleted.followTwitter;
-        likePostButton.disabled = tasksCompleted.likePost;
-        followSponsorsButton.disabled = tasksCompleted.followSponsors || totalActiveSponsors === 0;
-        if (tasksCompleted.followTwitter) followTwitterButton.classList.add("enabled");
-        if (tasksCompleted.likePost) likePostButton.classList.add("enabled");
-        if (tasksCompleted.followSponsors || totalActiveSponsors === 0) followSponsorsButton.classList.add("enabled");
-    }
-
-    // Salvar estado das tarefas
-    function saveTasksState() {
-        localStorage.setItem("tasksCompleted", JSON.stringify(tasksCompleted));
-    }
-
-    // Carregar estado das tarefas
-    function loadTasksState() {
-        const savedTasks = localStorage.getItem("tasksCompleted");
-        if (savedTasks) {
-            tasksCompleted = JSON.parse(savedTasks);
-            updateTaskButtons();
-        }
-    }
-
-    // Verificar conexão inicial
-    async function checkConnection() {
-        if (localStorage.getItem("walletConnected") === "true" && window.ethereum) {
-            await connectWallet();
-        }
-    }
-
-    // Alterar idioma
-    function changeLanguage(lang) {
-        currentLanguage = lang;
-        localStorage.setItem("language", lang);
-        document.querySelectorAll("[data-i18n]").forEach(elem => {
-            const key = elem.getAttribute("data-i18n");
-            if (elem.tagName === "INPUT" && elem.hasAttribute("data-i18n-placeholder")) {
-                elem.placeholder = translations[lang][elem.getAttribute("data-i18n-placeholder")] || "";
-            } else {
-                elem.textContent = translations[lang][key] || elem.textContent;
-            }
-        });
-        updateUI();
-        checkClaimStatus();
-    }
-
-    // Listeners de eventos
-    connectWalletButton.addEventListener("click", connectWallet);
-    followTwitterButton.addEventListener("click", () => {
-        window.open("https://x.com/_roneslira", "_blank");
-        setTimeout(() => {
-            tasksCompleted.followTwitter = true;
-            saveTasksState();
-            updateTaskButtons();
+            updateUI();
             checkClaimStatus();
-        }, 5000);
-    });
-    likePostButton.addEventListener("click", () => {
-        window.open("https://x.com/_roneslira/status/1860113877735416148", "_blank");
-        setTimeout(() => {
-            tasksCompleted.likePost = true;
-            saveTasksState();
-            updateTaskButtons();
-            checkClaimStatus();
-        }, 5000);
-    });
-    followSponsorsButton.addEventListener("click", () => {
-        if (totalActiveSponsors === 0) {
-            tasksCompleted.followSponsors = true;
-            saveTasksState();
-            updateTaskButtons();
-            checkClaimStatus();
-            return;
         }
-        if (!followProcessStarted) {
-            followProcessStarted = true;
-            followSpinner.style.display = "inline-block";
-            followSponsorsText.textContent = translations[currentLanguage]["follow"];
-            followButtonClicks = 0;
-        }
-        const sponsorLinks = Array.from(sponsorsList.querySelectorAll(".sponsor-item span:first-child"))
-            .map(span => span.textContent.startsWith("http") ? span.textContent : `https://x.com/${span.textContent}`);
-        if (followButtonClicks < totalActiveSponsors) {
-            window.open(sponsorLinks[followButtonClicks], "_blank");
-            followButtonClicks++;
-            const progress = (followButtonClicks / totalActiveSponsors) * 100;
-            followSponsorsButton.style.background = `linear-gradient(to right, #28a745 ${progress}%, #1a73e8 ${progress}%)`;
-        }
-        if (followButtonClicks === totalActiveSponsors) {
+
+        // Listeners de eventos
+        connectWalletButton.addEventListener("click", connectWallet);
+        followTwitterButton.addEventListener("click", () => {
+            window.open("https://x.com/_roneslira", "_blank");
             setTimeout(() => {
-                tasksCompleted.followSponsors = true;
-                followProcessStarted = false;
-                followSpinner.style.display = "none";
-                followSponsorsText.textContent = translations[currentLanguage]["follow_sponsors"];
+                tasksCompleted.followTwitter = true;
                 saveTasksState();
                 updateTaskButtons();
                 checkClaimStatus();
-                followSponsorsButton.style.background = "#28a745";
             }, 5000);
-        }
-    });
-    claimButton.addEventListener("click", claimTokens);
-    disconnectWallet.addEventListener("click", () => {
-        localStorage.removeItem("walletConnected");
-        tasksCompleted.connectWallet = false;
-        saveTasksState();
-        walletInfo.style.display = "none";
-        account = null;
-        signer = null;
-        updateTaskButtons();
-        checkClaimStatus();
-        status.textContent = translations[currentLanguage]["connect_wallet_to_start"];
-    });
-    copyWallet.addEventListener("click", () => {
-        navigator.clipboard.writeText(account);
-        status.textContent = "Address copied to clipboard!";
-        setTimeout(() => status.textContent = "", 2000);
-    });
-    donateButton.addEventListener("click", donate);
-    submitXProfile.addEventListener("click", submitXProfileFunc);
-    document.querySelectorAll(".language-flag").forEach(flag => {
-        flag.addEventListener("click", () => changeLanguage(flag.getAttribute("data-lang")));
-    });
-    aboutLink.addEventListener("click", (e) => {
-        e.preventDefault();
-        aboutModal.style.display = "block";
-        modalOverlay.style.display = "block";
-    });
-    contactLink.addEventListener("click", (e) => {
-        e.preventDefault();
-        contactModal.style.display = "block";
-        modalOverlay.style.display = "block";
-    });
-    termsLink.addEventListener("click", (e) => {
-        e.preventDefault();
-        termsModal.style.display = "block";
-        modalOverlay.style.display = "block";
-    });
-    closeAbout.addEventListener("click", () => {
-        aboutModal.style.display = "none";
-        modalOverlay.style.display = "none";
-    });
-    closeContact.addEventListener("click", () => {
-        contactModal.style.display = "none";
-        modalOverlay.style.display = "none";
-    });
-    closeTerms.addEventListener("click", () => {
-        termsModal.style.display = "none";
-        modalOverlay.style.display = "none";
-    });
-    closeSponsorInfo.addEventListener("click", () => {
-        sponsorInfoModal.style.display = "none";
-        modalOverlay.style.display = "none";
-    });
-    modalOverlay.addEventListener("click", () => {
-        confirmationModal.style.display = "none";
-        sponsorModal.style.display = "none";
-        sponsorInfoModal.style.display = "none";
-        aboutModal.style.display = "none";
-        contactModal.style.display = "none";
-        termsModal.style.display = "none";
-        modalOverlay.style.display = "none";
-    });
-
-    // Inicialização
-    window.addEventListener("load", async () => {
-        loadTasksState();
-        provider = await getProviderWithFailover(MONAD_TESTNET.rpcUrls);
-        contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, provider);
-        await checkConnection();
-        await updateUI();
-        await loadSponsors();
-        rotateAds();
-        setInterval(rotateAds, 5000);
-        changeLanguage(currentLanguage);
-    });
-
-    // Monitorar inatividade
-    let inactivityTimeout;
-    function resetInactivityTimer() {
-        clearTimeout(inactivityTimeout);
-        inactivityTimeout = setTimeout(() => {
-            if (localStorage.getItem("walletConnected") === "true") {
-                disconnectWallet.click();
-                status.textContent = "Disconnected due to inactivity.";
+        });
+        likePostButton.addEventListener("click", () => {
+            window.open("https://x.com/_roneslira/status/1860113877735416148", "_blank");
+            setTimeout(() => {
+                tasksCompleted.likePost = true;
+                saveTasksState();
+                updateTaskButtons();
+                checkClaimStatus();
+            }, 5000);
+        });
+        followSponsorsButton.addEventListener("click", () => {
+            if (totalActiveSponsors === 0) {
+                tasksCompleted.followSponsors = true;
+                saveTasksState();
+                updateTaskButtons();
+                checkClaimStatus();
+                return;
             }
-        }, INACTIVITY_TIMEOUT);
-    }
-    document.addEventListener("mousemove", resetInactivityTimer);
-    document.addEventListener("keypress", resetInactivityTimer);
-    resetInactivityTimer();
-</script>
+            if (!followProcessStarted) {
+                followProcessStarted = true;
+                followSpinner.style.display = "inline-block";
+                followSponsorsText.textContent = translations[currentLanguage]["follow"];
+                followButtonClicks = 0;
+            }
+            const sponsorLinks = Array.from(sponsorsList.querySelectorAll(".sponsor-item span:first-child"))
+                .map(span => span.textContent.startsWith("http") ? span.textContent : `https://x.com/${span.textContent}`);
+            if (followButtonClicks < totalActiveSponsors) {
+                window.open(sponsorLinks[followButtonClicks], "_blank");
+                followButtonClicks++;
+                const progress = (followButtonClicks / totalActiveSponsors) * 100;
+                followSponsorsButton.style.background = `linear-gradient(to right, #28a745 ${progress}%, #1a73e8 ${progress}%)`;
+            }
+            if (followButtonClicks === totalActiveSponsors) {
+                setTimeout(() => {
+                    tasksCompleted.followSponsors = true;
+                    followProcessStarted = false;
+                    followSpinner.style.display = "none";
+                    followSponsorsText.textContent = translations[currentLanguage]["follow_sponsors"];
+                    saveTasksState();
+                    updateTaskButtons();
+                    checkClaimStatus();
+                    followSponsorsButton.style.background = "#28a745";
+                }, 5000);
+            }
+        });
+        claimButton.addEventListener("click", claimTokens);
+        disconnectWallet.addEventListener("click", () => {
+            localStorage.removeItem("walletConnected");
+            tasksCompleted.connectWallet = false;
+            saveTasksState();
+            walletInfo.style.display = "none";
+            account = null;
+            signer = null;
+            updateTaskButtons();
+            checkClaimStatus();
+            status.textContent = translations[currentLanguage]["connect_wallet_to_start"];
+        });
+        copyWallet.addEventListener("click", () => {
+            navigator.clipboard.writeText(account);
+            status.textContent = "Address copied to clipboard!";
+            setTimeout(() => status.textContent = "", 2000);
+        });
+        donateButton.addEventListener("click", donate);
+        submitXProfile.addEventListener("click", submitXProfileFunc);
+        document.querySelectorAll(".language-flag").forEach(flag => {
+            flag.addEventListener("click", () => changeLanguage(flag.getAttribute("data-lang")));
+        });
+        aboutLink.addEventListener("click", (e) => {
+            e.preventDefault();
+            aboutModal.style.display = "block";
+            modalOverlay.style.display = "block";
+        });
+        contactLink.addEventListener("click", (e) => {
+            e.preventDefault();
+            contactModal.style.display = "block";
+            modalOverlay.style.display = "block";
+        });
+        termsLink.addEventListener("click", (e) => {
+            e.preventDefault();
+            termsModal.style.display = "block";
+            modalOverlay.style.display = "block";
+        });
+        closeAbout.addEventListener("click", () => {
+            aboutModal.style.display = "none";
+            modalOverlay.style.display = "none";
+        });
+        closeContact.addEventListener("click", () => {
+            contactModal.style.display = "none";
+            modalOverlay.style.display = "none";
+        });
+        closeTerms.addEventListener("click", () => {
+            termsModal.style.display = "none";
+            modalOverlay.style.display = "none";
+        });
+        closeSponsorInfo.addEventListener("click", () => {
+            sponsorInfoModal.style.display = "none";
+            modalOverlay.style.display = "none";
+        });
+        modalOverlay.addEventListener("click", () => {
+            confirmationModal.style.display = "none";
+            sponsorModal.style.display = "none";
+            sponsorInfoModal.style.display = "none";
+            aboutModal.style.display = "none";
+            contactModal.style.display = "none";
+            termsModal.style.display = "none";
+            modalOverlay.style.display = "none";
+        });
+
+        // Inicialização
+        window.addEventListener("load", async () => {
+            loadTasksState();
+            provider = await getProviderWithFailover(MONAD_TESTNET.rpcUrls);
+            contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, provider);
+            await checkConnection();
+            await updateUI();
+            await loadSponsors();
+            rotateAds();
+            setInterval(rotateAds, 5000);
+            changeLanguage(currentLanguage);
+        });
+
+        // Monitorar inatividade
+        let inactivityTimeout;
+        function resetInactivityTimer() {
+            clearTimeout(inactivityTimeout);
+            inactivityTimeout = setTimeout(() => {
+                if (localStorage.getItem("walletConnected") === "true") {
+                    disconnectWallet.click();
+                    status.textContent = "Disconnected due to inactivity.";
+                }
+            }, INACTIVITY_TIMEOUT);
+        }
+        document.addEventListener("mousemove", resetInactivityTimer);
+        document.addEventListener("keypress", resetInactivityTimer);
+        resetInactivityTimer();
+    </script>
 </body>
 </html>
