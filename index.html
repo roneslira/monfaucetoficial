@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MonFaucet</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
-    <link rel="icon" type="image/png" href="https://i.imgur.com/12cskgZ.png">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="https://i.imgur.com/12cskgZ.png" alt="MonFaucet Icon">
     <style>
         :root {
             --background-start: #000000;
@@ -67,7 +68,7 @@
             border-radius: 0.7rem;
             border: none;
             cursor: pointer;
-            transition: all 0.4s ease-in-out;
+            transition: background 0.4s ease-in-out;
         }
         .wallet-info button:hover { background: var(--button-hover); }
         .copy-button {
@@ -143,7 +144,7 @@
             border: 1px solid var(--box-border);
             box-shadow: 0 3px 10px var(--shadow-color);
             font-weight: bold;
-            transition: all 0.4s ease-in-out;
+            transition: transform 0.4s ease-in-out, background 0.4s ease-in-out;
             cursor: pointer;
             position: relative;
             white-space: nowrap;
@@ -202,7 +203,7 @@
             padding: 0.5rem 1rem;
             border-radius: 0.7rem;
             cursor: pointer;
-            transition: all 0.4s ease-in-out;
+            transition: background 0.4s ease-in-out;
         }
         .modal-button:hover { background: var(--button-hover); }
         #modal-overlay {
@@ -493,9 +494,19 @@
         .language-flag:hover {
             transform: scale(1.2);
         }
+        button:focus {
+            outline: 2px solid var(--secondary-color);
+            outline-offset: 2px;
+        }
         @media (max-width: 1024px) { 
             .ad-container, .sponsors-container { 
-                display: none; 
+                display: block;
+                position: relative;
+                left: auto;
+                right: auto;
+                transform: none;
+                max-width: 90%;
+                margin: 1rem auto;
             } 
         }
         @media (max-width: 768px) {
@@ -517,7 +528,7 @@
         </button>
         <button id="disconnectWallet" data-i18n="disconnect">Disconnect</button>
     </div>
-    <div class="main-content">
+    <main class="main-content">
         <canvas></canvas>
         <div class="sponsors-container" id="sponsors-container">
             <h2><i class="fas fa-crown"></i> <span data-i18n="sponsors">Sponsors</span></h2>
@@ -574,20 +585,20 @@
             <div class="status" id="status"></div>
         </div>
         <div class="donate-container">
-            <input type="number" id="donateAmount" data-i18n-placeholder="enter_mon_amount" placeholder="Enter MON amount" step="0.01" min="0">
+            <input type="number" id="donateAmount" data-i18n-placeholder="enter_mon_amount" placeholder="Enter MON amount" step="0.01" min="0.01" required>
             <button id="donateButton">
                 <span data-i18n="donate">Donate</span>
                 <div class="spinner" id="donateSpinner"></div>
             </button>
         </div>
         <div class="ad-container">
-            <a href="https://airdropsmanager.com/" target="_blank">
-                <img id="adImage" src="https://i.imgur.com/NgWonX9.png" alt="Ad Space">
+            <a id="adLink" href="https://airdropsmanager.com/" target="_blank" rel="noopener noreferrer">
+                <img id="adImage" src="https://i.imgur.com/NgWonX9.png" alt="Advertisement" loading="lazy" class="ad-image">
             </a>
         </div>
         <div class="decorative-blur blur-1"></div>
         <div class="decorative-blur blur-2"></div>
-    </div>
+    </main>
     <div id="modal-overlay"></div>
     <div id="confirmation-modal" class="modal">
         <div class="modal-content" id="modalMessage">Did you complete the task?</div>
@@ -600,7 +611,7 @@
         <div class="modal-content">
             <h3 data-i18n="congratulations">Congratulations!</h3>
             <p data-i18n="you_are_a_sponsor">You are a <span id="sponsorLevel"></span> Sponsor!</p>
-            <input type="text" id="xProfileInput" data-i18n-placeholder="enter_x_profile" placeholder="Enter your X profile URL">
+            <input type="text" id="xProfileInput" data-i18n-placeholder="enter_x_profile" placeholder="Enter your X profile URL" required>
             <button class="modal-button" id="submitXProfile">
                 <span data-i18n="submit">Submit</span>
                 <div class="spinner" id="submitSpinner"></div>
@@ -634,7 +645,7 @@
         <div class="modal-content">
             <h3 data-i18n="contact_us">Contact Us</h3>
             <p data-i18n="contact_description">For inquiries, support, or suggestions, reach out to us on X:</p>
-            <p><a href="https://x.com/_roneslira" target="_blank">@_roneslira</a></p>
+            <p><a href="https://x.com/_roneslira" target="_blank" rel="noopener noreferrer">@_roneslira</a></p>
             <button class="modal-button" id="close-contact" data-i18n="close">Close</button>
         </div>
     </div>
@@ -689,7 +700,11 @@
         const MONAD_TESTNET = {
             chainId: '0x279F', // 10143
             chainName: 'Monad Testnet',
-            rpcUrls: ['https://testnet-rpc.monad.xyz/'],
+            rpcUrls: [
+                'https://testnet-rpc.monad.xyz/',
+                'https://monad-testnet.drpc.org',
+                'https://testnet-rpc.monad.xyz'
+            ],
             nativeCurrency: { name: 'MON', symbol: 'MON', decimals: 18 },
             blockExplorerUrls: ['https://testnet.monadexplorer.com/']
         };
@@ -759,7 +774,17 @@
                 next_claim_in: "Next claim in",
                 claiming_tokens: "Claiming tokens...",
                 tokens_claimed: "Tokens claimed successfully!",
-                failed_to_claim: "Failed to claim tokens"
+                failed_to_claim: "Failed to claim tokens",
+                did_you_follow_sponsor: "Did you follow this sponsor on X?",
+                claims_paused: "Claims are currently paused.",
+                ready_to_claim: "Ready to claim your tokens!",
+                invalid_donation: "Enter a valid donation amount!",
+                processing_donation: "Processing donation...",
+                thank_you_donation: "Thank you for your donation!",
+                sponsor_slots_full: "All sponsor slots are full!",
+                wallet_disconnected: "Wallet disconnected.",
+                address_copied: "Address copied to clipboard!",
+                failed_to_copy: "Failed to copy address."
             },
             pt: {
                 claim_mon_tokens: "Fazer Claim de MON na Testnet Monad",
@@ -825,9 +850,25 @@
                 next_claim_in: "Próximo claim em",
                 claiming_tokens: "Fazendo claim dos tokens...",
                 tokens_claimed: "Tokens recebidos com sucesso!",
-                failed_to_claim: "Falha ao fazer claim dos tokens"
+                failed_to_claim: "Falha ao fazer claim dos tokens",
+                did_you_follow_sponsor: "Você seguiu este sponsor no X?",
+                claims_paused: "Os claims estão pausados no momento.",
+                ready_to_claim: "Pronto para fazer claim dos seus tokens!",
+                invalid_donation: "Digite um valor de doação válido!",
+                processing_donation: "Processando doação...",
+                thank_you_donation: "Obrigado pela sua doação!",
+                sponsor_slots_full: "Todos os slots de sponsor estão ocupados!",
+                wallet_disconnected: "Carteira desconectada.",
+                address_copied: "Endereço copiado para a área de transferência!",
+                failed_to_copy: "Falha ao copiar endereço."
             }
         };
+
+        const ads = [
+            { url: "https://airdropsmanager.com/", img: "https://i.imgur.com/NgWonX9.png" },
+            { url: "https://example.com/ad2", img: "https://via.placeholder.com/300x600?text=Ad+2" },
+            { url: "https://example.com/ad3", img: "https://via.placeholder.com/300x600?text=Ad+3" }
+        ];
 
         let provider, signer, contract, account;
         let tasksCompleted = JSON.parse(localStorage.getItem("tasksCompleted")) || {
@@ -930,8 +971,8 @@
             elements.modalStatus.textContent = "";
         }
 
-        function setStatusMessage(message) {
-            elements.status.textContent = message;
+        function setStatusMessage(messageKey, error = "") {
+            elements.status.textContent = translations[currentLanguage][messageKey] + (error ? `: ${error}` : "");
             setTimeout(() => elements.status.textContent = "", 5000);
         }
 
@@ -950,53 +991,69 @@
             localStorage.setItem("tasksCompleted", JSON.stringify(tasksCompleted));
         }
 
+        const persistTasksDebounced = debounce(persistTasks, 500);
+
+        function debounce(func, wait) {
+            let timeout;
+            return function (...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), wait);
+            };
+        }
+
         async function initializeContract() {
+            if (!window.ethereum) {
+                throw new Error("MetaMask not detected. Please install MetaMask.");
+            }
             try {
-                if (!window.ethereum) {
-                    throw new Error("MetaMask not detected. Please install MetaMask.");
-                }
+                await window.ethereum.request({ method: "eth_requestAccounts" });
+                let rpcIndex = 0;
                 provider = new ethers.providers.Web3Provider(window.ethereum);
                 signer = provider.getSigner();
                 contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
-                console.log("Contract initialized at:", CONTRACT_ADDRESS);
+
+                provider.on('error', async () => {
+                    rpcIndex = (rpcIndex + 1) % MONAD_TESTNET.rpcUrls.length;
+                    await window.ethereum.request({
+                        method: 'wallet_switchEthereumChain',
+                        params: [{ chainId: MONAD_TESTNET.chainId, rpcUrl: MONAD_TESTNET.rpcUrls[rpcIndex] }]
+                    });
+                    provider = new ethers.providers.Web3Provider(window.ethereum);
+                    signer = provider.getSigner();
+                    contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+                });
             } catch (error) {
-                console.error("Initialize contract error:", error);
-                setStatusMessage(`${translations[currentLanguage].failed_to_load_ui}: ${error.message}`);
-                throw error;
+                throw new Error("Failed to initialize contract: " + error.message);
             }
         }
 
         async function connectWallet() {
             if (!window.ethereum) {
-                setStatusMessage(translations[currentLanguage].please_install_metamask);
+                setStatusMessage("please_install_metamask");
                 return;
             }
             try {
-                await provider.send("eth_requestAccounts", []);
-                account = await signer.getAddress();
                 await initializeContract();
-
+                account = await signer.getAddress();
                 const network = await provider.getNetwork();
                 if (network.chainId !== 10143) {
                     await window.ethereum.request({ method: 'wallet_addEthereumChain', params: [MONAD_TESTNET] });
                 }
-
                 elements.walletAddress.textContent = `${account.slice(0, 6)}...${account.slice(-4)}`;
                 elements.walletInfo.style.display = "flex";
                 tasksCompleted.connectWallet = true;
-                persistTasks();
+                persistTasksDebounced();
                 localStorage.setItem("walletConnected", "true");
                 localStorage.setItem("lastActive", Date.now());
                 updateTaskButtons();
                 await updateUI();
                 await loadSponsors();
-                setStatusMessage(translations[currentLanguage].wallet_connected_successfully);
-
+                setStatusMessage("wallet_connected_successfully");
                 window.ethereum.on('accountsChanged', () => location.reload());
                 window.ethereum.on('chainChanged', () => location.reload());
             } catch (error) {
                 console.error("Connect wallet error:", error);
-                setStatusMessage(`${translations[currentLanguage].failed_to_connect_wallet}: ${error.message}`);
+                setStatusMessage("failed_to_connect_wallet", error.message);
             }
         }
 
@@ -1032,7 +1089,7 @@
             elements.modalMessage.textContent = translations[currentLanguage].did_you_follow;
             document.getElementById("confirm-yes").onclick = () => {
                 tasksCompleted.followTwitter = true;
-                persistTasks();
+                persistTasksDebounced();
                 updateTaskButtons();
                 checkClaimStatus();
                 closeModal();
@@ -1046,7 +1103,7 @@
             elements.modalMessage.textContent = translations[currentLanguage].did_you_like;
             document.getElementById("confirm-yes").onclick = () => {
                 tasksCompleted.likePost = true;
-                persistTasks();
+                persistTasksDebounced();
                 updateTaskButtons();
                 checkClaimStatus();
                 closeModal();
@@ -1056,7 +1113,7 @@
 
         async function startFollowSponsors() {
             if (!tasksCompleted.connectWallet) {
-                setStatusMessage(translations[currentLanguage].please_connect_wallet);
+                setStatusMessage("please_connect_wallet");
                 return;
             }
             followButtonClicks++;
@@ -1068,22 +1125,22 @@
 
                 if (totalActiveSponsors === 0) {
                     tasksCompleted.followSponsors = true;
-                    persistTasks();
+                    persistTasksDebounced();
                     updateTaskButtons();
                     checkClaimStatus();
-                    setStatusMessage(translations[currentLanguage].no_sponsors);
+                    setStatusMessage("no_sponsors");
                     return;
                 }
 
                 if (!followProcessStarted) {
                     followProcessStarted = true;
-                    setStatusMessage(translations[currentLanguage].follow_the_sponsors);
+                    setStatusMessage("follow_the_sponsors");
                     document.querySelectorAll(".sponsor-item button").forEach(btn => {
                         if (btn.textContent === translations[currentLanguage].follow) btn.classList.add("pulse");
                     });
                     updateFollowSponsorsButton();
                 } else if (followButtonClicks > 1 && !tasksCompleted.followSponsors) {
-                    setStatusMessage(translations[currentLanguage].follow_active_sponsors);
+                    setStatusMessage("follow_active_sponsors");
                     const activeItems = document.querySelectorAll(".sponsor-item .badge.active");
                     activeItems.forEach(badge => {
                         const sponsorItem = badge.closest(".sponsor-item");
@@ -1093,7 +1150,7 @@
                 }
             } catch (error) {
                 console.error("Start follow sponsors error:", error);
-                setStatusMessage(`${translations[currentLanguage].failed_to_load_sponsors}: ${error.message}`);
+                setStatusMessage("failed_to_load_sponsors", error.message);
             }
         }
 
@@ -1101,14 +1158,14 @@
             window.open(url, "_blank");
             setTimeout(() => {
                 showModal(elements.confirmationModal);
-                elements.modalMessage.textContent = translations[currentLanguage].did_you_follow_sponsor || "Did you follow this sponsor on X?";
+                elements.modalMessage.textContent = translations[currentLanguage].did_you_follow_sponsor;
                 document.getElementById("confirm-yes").onclick = () => {
                     sponsorsFollowed++;
                     if (sponsorsFollowed >= totalActiveSponsors) {
                         tasksCompleted.followSponsors = true;
                         document.querySelectorAll(".sponsor-item button").forEach(btn => btn.classList.remove("pulse"));
                     }
-                    persistTasks();
+                    persistTasksDebounced();
                     updateTaskButtons();
                     checkClaimStatus();
                     closeModal();
@@ -1131,7 +1188,7 @@
                 checkClaimStatus();
             } catch (error) {
                 console.error("Update UI error:", error);
-                setStatusMessage(`${translations[currentLanguage].failed_to_load_ui}: ${error.message}`);
+                setStatusMessage("failed_to_load_ui", error.message);
             }
         }
 
@@ -1139,7 +1196,7 @@
             if (!account) {
                 elements.claimButton.disabled = true;
                 elements.claimButton.classList.remove("enabled");
-                setStatusMessage(translations[currentLanguage].please_connect_wallet);
+                setStatusMessage("please_connect_wallet");
                 return;
             }
             try {
@@ -1154,25 +1211,25 @@
                 if (paused) {
                     elements.claimButton.disabled = true;
                     elements.claimButton.classList.remove("enabled");
-                    setStatusMessage(translations[currentLanguage].claims_paused || "Claims are currently paused.");
+                    setStatusMessage("claims_paused");
                 } else if (now < last + cooldown) {
                     elements.claimButton.disabled = true;
                     elements.claimButton.classList.remove("enabled");
                     const timeLeft = last + cooldown - now;
-                    setStatusMessage(`${translations[currentLanguage].next_claim_in} ${formatTime(timeLeft)}`);
+                    setStatusMessage("next_claim_in", formatTime(timeLeft));
                     startCooldownCountdown(last, cooldown);
                 } else if (!tasksCompleted.followTwitter || !tasksCompleted.likePost || (hasActiveSponsors && !tasksCompleted.followSponsors)) {
                     elements.claimButton.disabled = true;
                     elements.claimButton.classList.remove("enabled");
-                    setStatusMessage(translations[currentLanguage].complete_all_tasks);
+                    setStatusMessage("complete_all_tasks");
                 } else {
                     elements.claimButton.disabled = false;
                     elements.claimButton.classList.add("enabled");
-                    setStatusMessage(translations[currentLanguage].ready_to_claim || "Ready to claim your tokens!");
+                    setStatusMessage("ready_to_claim");
                 }
             } catch (error) {
                 console.error("Check claim status error:", error);
-                setStatusMessage(`${translations[currentLanguage].failed_to_claim}: ${error.message}`);
+                setStatusMessage("failed_to_claim", error.message);
             }
         }
 
@@ -1195,26 +1252,28 @@
 
         async function claimTokens() {
             if (!tasksCompleted.connectWallet || !tasksCompleted.followTwitter || !tasksCompleted.likePost || !tasksCompleted.followSponsors) {
-                setStatusMessage(translations[currentLanguage].complete_all_tasks);
+                setStatusMessage("complete_all_tasks");
                 return;
             }
             try {
                 elements.claimButton.disabled = true;
                 elements.claimSpinner.style.display = "block";
-                setStatusMessage(translations[currentLanguage].claiming_tokens);
+                setStatusMessage("claiming_tokens");
                 await initializeContract();
-                const tx = await contract.claim({ gasLimit: 200000 });
+                const gasEstimate = await contract.estimateGas.claim();
+                const gasLimit = gasEstimate.mul(120).div(100); // +20% margem
+                const tx = await contract.claim({ gasLimit });
                 await tx.wait();
-                setStatusMessage(translations[currentLanguage].tokens_claimed);
+                setStatusMessage("tokens_claimed");
                 tasksCompleted.followSponsors = false;
                 sponsorsFollowed = 0;
                 followProcessStarted = false;
-                persistTasks();
+                persistTasksDebounced();
                 updateTaskButtons();
                 await updateUI();
             } catch (error) {
                 console.error("Claim error:", error);
-                setStatusMessage(`${translations[currentLanguage].failed_to_claim}: ${error.message}`);
+                setStatusMessage("failed_to_claim", error.message);
             } finally {
                 elements.claimButton.disabled = false;
                 elements.claimSpinner.style.display = "none";
@@ -1223,25 +1282,24 @@
 
         async function donate() {
             if (!account) {
-                setStatusMessage(translations[currentLanguage].please_connect_wallet);
+                setStatusMessage("please_connect_wallet");
                 return;
             }
             const amount = elements.donateAmount.value.trim();
             if (!amount || parseFloat(amount) <= 0) {
-                setStatusMessage(translations[currentLanguage].invalid_donation || "Enter a valid donation amount!");
+                setStatusMessage("invalid_donation");
                 return;
             }
             try {
                 elements.donateButton.disabled = true;
                 elements.donateSpinner.style.display = "block";
-                setStatusMessage(translations[currentLanguage].processing_donation || "Processing donation...");
+                setStatusMessage("processing_donation");
                 await initializeContract();
                 const paused = await contract.paused();
                 if (paused) {
-                    setStatusMessage(translations[currentLanguage].donations_paused || "Donations are currently paused.");
+                    setStatusMessage("donations_paused");
                     return;
                 }
-
                 const valueInWei = ethers.utils.parseEther(amount);
                 const sponsorAmounts = ["1000", "700", "500", "200", "100"];
                 const isSponsorAmount = sponsorAmounts.includes(amount);
@@ -1257,12 +1315,14 @@
                         }
                     }
                     if (!slotAvailable) {
-                        setStatusMessage(translations[currentLanguage].sponsor_slots_full || "All sponsor slots are full!");
+                        setStatusMessage("sponsor_slots_full");
                         return;
                     }
                 }
 
-                const tx = await contract.deposit({ value: valueInWei, gasLimit: 200000 });
+                const gasEstimate = await contract.estimateGas.deposit({ value: valueInWei });
+                const gasLimit = gasEstimate.mul(120).div(100); // +20% margem
+                const tx = await contract.deposit({ value: valueInWei, gasLimit });
                 const receipt = await tx.wait();
 
                 if (isSponsorAmount && receipt.events.some(e => e.event === "NewSponsor")) {
@@ -1271,13 +1331,13 @@
                     elements.sponsorLevelSpan.textContent = sponsorLevels[sponsorIndex];
                     showModal(elements.sponsorModal);
                 } else {
-                    setStatusMessage(translations[currentLanguage].thank_you_donation || "Thank you for your donation!");
+                    setStatusMessage("thank_you_donation");
                 }
                 await updateUI();
                 await loadSponsors();
             } catch (error) {
                 console.error("Donate error:", error);
-                setStatusMessage(error.reason || `${translations[currentLanguage].donation_failed || "Donation failed"}: ${error.message}`);
+                setStatusMessage("donation_failed", error.message);
             } finally {
                 elements.donateButton.disabled = false;
                 elements.donateSpinner.style.display = "none";
@@ -1301,7 +1361,9 @@
                     elements.modalStatus.textContent = translations[currentLanguage].no_sponsor_slot || "No sponsor slot found!";
                     return;
                 }
-                const tx = await contract.addSponsor(position, xProfile, { gasLimit: 200000 });
+                const gasEstimate = await contract.estimateGas.addSponsor(position, xProfile);
+                const gasLimit = gasEstimate.mul(120).div(100); // +20% margem
+                const tx = await contract.addSponsor(position, xProfile, { gasLimit });
                 await tx.wait();
                 elements.modalStatus.textContent = translations[currentLanguage].profile_added || "Profile added successfully!";
                 closeModal();
@@ -1318,7 +1380,7 @@
         async function loadSponsors() {
             try {
                 if (!contract) await initializeContract();
-                const sponsors = await contract.getActiveSponsors({ gasLimit: 300000 }); // Aumentar gasLimit para chamadas complexas
+                const sponsors = await contract.getActiveSponsors({ gasLimit: 300000 });
                 const sponsorClasses = ["sponsor-diamond", "sponsor-gold", "sponsor-silver", "sponsor-bronze", "sponsor-copper"];
                 const sponsorLevels = ["Diamond", "Gold", "Silver", "Bronze", "Copper"];
                 const sponsorIcons = ["fa-gem", "fa-trophy", "fa-medal", "fa-award", "fa-coins"];
@@ -1389,67 +1451,65 @@
             const hours = Math.floor((seconds % 86400) / 3600);
             const minutes = Math.floor((seconds % 3600) / 60);
             const secs = seconds % 60;
-            return `${days > 0 ? days + translations[currentLanguage].days_short : ""}${hours > 0 ? hours + translations[currentLanguage].hours_short : ""}${minutes > 0 ? minutes + translations[currentLanguage].minutes_short : ""}${secs}${translations[currentLanguage].seconds_short}`.trim();
+            return `${days > 0 ? days + translations[currentLanguage].days_short + " " : ""}${hours > 0 ? hours + translations[currentLanguage].hours_short + " " : ""}${minutes > 0 ? minutes + translations[currentLanguage].minutes_short + " " : ""}${secs}${translations[currentLanguage].seconds_short}`;
         }
 
         function disconnect() {
+            account = null;
             provider = null;
             signer = null;
             contract = null;
-            account = null;
-            tasksCompleted = { connectWallet: false, followTwitter: false, likePost: false, followSponsors: false };
-            sponsorsFollowed = 0;
-            totalActiveSponsors = 0;
-            followProcessStarted = false;
-            followButtonClicks = 0;
+            tasksCompleted.connectWallet = false;
+            persistTasksDebounced();
             localStorage.removeItem("walletConnected");
-            localStorage.removeItem("lastActive");
-            persistTasks();
             elements.walletInfo.style.display = "none";
             updateTaskButtons();
-            checkClaimStatus();
-            setStatusMessage(translations[currentLanguage].wallet_disconnected || "Wallet disconnected.");
+            setStatusMessage("wallet_disconnected");
         }
 
-        function copyAddress() {
-            navigator.clipboard.writeText(account).then(() => {
-                setStatusMessage(translations[currentLanguage].address_copied || "Address copied to clipboard!");
-            }).catch(() => {
-                setStatusMessage(translations[currentLanguage].failed_to_copy || "Failed to copy address.");
-            });
-        }
-
-        async function checkConnection() {
-            if (localStorage.getItem("walletConnected") === "true") {
-                const lastActive = Number(localStorage.getItem("lastActive"));
-                if (Date.now() - lastActive < INACTIVITY_TIMEOUT) {
-                    await connectWallet();
-                } else {
-                    disconnect();
-                }
+        async function copyAddress() {
+            try {
+                await navigator.clipboard.writeText(account);
+                setStatusMessage("address_copied");
+            } catch (error) {
+                console.error("Copy address error:", error);
+                setStatusMessage("failed_to_copy", error.message);
             }
         }
 
-        document.addEventListener("mousemove", () => {
-            if (account) localStorage.setItem("lastActive", Date.now());
-        });
-        document.addEventListener("keydown", () => {
-            if (account) localStorage.setItem("lastActive", Date.now());
-        });
+        function rotateAds() {
+            const adLink = document.getElementById("adLink");
+            const adImage = document.getElementById("adImage");
+            let currentAdIndex = 0;
+
+            setInterval(() => {
+                currentAdIndex = (currentAdIndex + 1) % ads.length;
+                adLink.href = ads[currentAdIndex].url;
+                adImage.src = ads[currentAdIndex].img;
+            }, 10000); // Rotaciona a cada 10 segundos
+        }
+
+        function checkInactivity() {
+            const lastActive = localStorage.getItem("lastActive");
+            if (lastActive && Date.now() - lastActive > INACTIVITY_TIMEOUT) disconnect();
+            setTimeout(checkInactivity, 60000);
+        }
 
         window.addEventListener("load", async () => {
-            await checkConnection();
+            if (localStorage.getItem("walletConnected") === "true") await connectWallet();
             await updateUI();
             await loadSponsors();
+            updateTaskButtons();
             updateLanguage();
-        });
-        const canvas = document.querySelector("canvas");
+            rotateAds();
+            checkInactivity();
+            const canvas = document.querySelector("canvas");
             const ctx = canvas.getContext("2d");
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
 
-            let particlesArray = [];
-            const numberOfParticles = 50;
+            const particlesArray = [];
+            const numberOfParticles = 100;
 
             class Particle {
                 constructor() {
@@ -1473,10 +1533,7 @@
             }
 
             function init() {
-                particlesArray = [];
-                for (let i = 0; i < numberOfParticles; i++) {
-                    particlesArray.push(new Particle());
-                }
+                for (let i = 0; i < numberOfParticles; i++) particlesArray.push(new Particle());
             }
 
             function animate() {
@@ -1493,14 +1550,14 @@
                 requestAnimationFrame(animate);
             }
 
-            init();
-            animate();
-
             window.addEventListener("resize", () => {
                 canvas.width = window.innerWidth;
                 canvas.height = window.innerHeight;
-                init();
             });
-        </script>
-    </body>
+
+            init();
+            animate();
+        });
+    </script>
+</body>
 </html>
