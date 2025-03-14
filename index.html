@@ -952,18 +952,17 @@
 
         async function initializeContract() {
             try {
-                if (!provider) {
-                    provider = window.ethereum ? new ethers.providers.Web3Provider(window.ethereum) : new ethers.providers.JsonRpcProvider(MONAD_TESTNET.rpcUrls[0]);
+                if (!window.ethereum) {
+                    throw new Error("MetaMask not detected. Please install MetaMask.");
                 }
-                if (!contract || !contract.getBalance) {
-                    contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, provider);
-                }
-                if (account && signer) {
-                    contract = contract.connect(signer);
-                }
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+                signer = provider.getSigner();
+                contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+                console.log("Contract initialized at:", CONTRACT_ADDRESS);
             } catch (error) {
                 console.error("Initialize contract error:", error);
                 setStatusMessage(`${translations[currentLanguage].failed_to_load_ui}: ${error.message}`);
+                throw error;
             }
         }
 
@@ -973,9 +972,7 @@
                 return;
             }
             try {
-                provider = new ethers.providers.Web3Provider(window.ethereum);
                 await provider.send("eth_requestAccounts", []);
-                signer = provider.getSigner();
                 account = await signer.getAddress();
                 await initializeContract();
 
@@ -1122,10 +1119,7 @@
 
         async function updateUI() {
             try {
-                await initializeContract();
-                if (!contract.getBalance || !contract.claimAmount || !contract.lastClaim) {
-                    throw new Error("Contract not properly initialized");
-                }
+                if (!contract) await initializeContract();
                 const [balance, claimAmt, last] = await Promise.all([
                     contract.getBalance(),
                     contract.claimAmount(),
@@ -1323,8 +1317,8 @@
 
         async function loadSponsors() {
             try {
-                await initializeContract();
-                const sponsors = await contract.getActiveSponsors();
+                if (!contract) await initializeContract();
+                const sponsors = await contract.getActiveSponsors({ gasLimit: 300000 }); // Aumentar gasLimit para chamadas complexas
                 const sponsorClasses = ["sponsor-diamond", "sponsor-gold", "sponsor-silver", "sponsor-bronze", "sponsor-copper"];
                 const sponsorLevels = ["Diamond", "Gold", "Silver", "Bronze", "Copper"];
                 const sponsorIcons = ["fa-gem", "fa-trophy", "fa-medal", "fa-award", "fa-coins"];
@@ -1444,14 +1438,12 @@
         });
 
         window.addEventListener("load", async () => {
-            await initializeContract();
             await checkConnection();
             await updateUI();
             await loadSponsors();
             updateLanguage();
         });
-    // Canvas animation for background particles
-            const canvas = document.querySelector("canvas");
+        const canvas = document.querySelector("canvas");
             const ctx = canvas.getContext("2d");
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
