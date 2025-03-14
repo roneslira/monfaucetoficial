@@ -739,7 +739,8 @@
                 submit: "Submit",
                 failed_to_load_ui: "Failed to load UI data.",
                 failed_to_load_sponsors: "Failed to load sponsors.",
-                error_checking_claim: "Error checking claim eligibility."
+                error_checking_claim: "Error checking claim eligibility.",
+                processing_claim: "Processing claim..."
             },
             pt: {
                 claim_mon_tokens: "Fazer Claim de MON na Testnet Monad",
@@ -785,7 +786,8 @@
                 submit: "Enviar",
                 failed_to_load_ui: "Falha ao carregar dados da interface.",
                 failed_to_load_sponsors: "Falha ao carregar sponsors.",
-                error_checking_claim: "Erro ao verificar elegibilidade para claim."
+                error_checking_claim: "Erro ao verificar elegibilidade para claim.",
+                processing_claim: "Processando claim..."
             }
         };
 
@@ -1101,7 +1103,7 @@
                     const last = await callContractMethod("lastClaim", account);
                     lastClaim.textContent = last > 0 ? new Date(last * 1000).toLocaleString() : translations[currentLanguage].none || "None";
                 }
-                checkClaimStatus();
+                await checkClaimStatus();
             } catch (error) {
                 console.error("Update UI error:", error);
                 status.textContent = translations[currentLanguage].failed_to_load_ui;
@@ -1171,23 +1173,29 @@
                 return;
             }
             try {
+                // Desativar o botão e mostrar o spinner imediatamente
                 claimButton.disabled = true;
+                claimButton.classList.remove("enabled");
                 claimSpinner.style.display = "block";
-                status.textContent = translations[currentLanguage].claiming_tokens || "Claiming tokens...";
+                status.textContent = translations[currentLanguage].processing_claim;
+
                 const gasLimit = await estimateGas("claim");
                 const tx = await contract.claim({ gasLimit });
                 await tx.wait();
+
                 status.textContent = translations[currentLanguage].tokens_claimed || "Tokens claimed successfully!";
                 tasksCompleted.followSponsors = false;
                 sponsorsFollowed = 0;
                 followProcessStarted = false;
                 updateTaskButtons();
-                await updateUI();
+                await updateUI(); // Atualiza a UI e verifica o status do claim
             } catch (error) {
                 console.error("Claim error:", error);
                 status.textContent = error.reason || translations[currentLanguage].failed_to_claim || "Failed to claim tokens.";
+                claimButton.disabled = false; // Reativar o botão em caso de erro
+                claimButton.classList.add("enabled");
             } finally {
-                claimButton.disabled = false;
+                // Só remover o spinner após todas as atualizações
                 claimSpinner.style.display = "none";
             }
         }
