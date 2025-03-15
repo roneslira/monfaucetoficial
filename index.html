@@ -325,6 +325,20 @@
             right: calc(50% - 580px);
             top: 50%;
             transform: translateY(-50%);
+            overflow: hidden;
+        }
+        .ad-container a {
+            display: block;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            position: absolute;
+            width: 100%;
+            left: 0;
+            top: 0;
+        }
+        .ad-container a.active {
+            opacity: 1;
+            position: relative;
         }
         .sponsor-item {
             width: 100%;
@@ -357,6 +371,15 @@
             0% { border-color: yellow; opacity: 1; }
             50% { border-color: yellow; opacity: 0.5; }
             100% { border-color: yellow; opacity: 1; }
+        }
+        .sponsor-item.new-sponsor {
+            border: 2px solid var(--secondary-color);
+            animation: pulseNew 1.5s infinite;
+        }
+        @keyframes pulseNew {
+            0% { box-shadow: 0 0 5px var(--secondary-color); }
+            50% { box-shadow: 0 0 10px var(--secondary-color); }
+            100% { box-shadow: 0 0 5px var(--secondary-color); }
         }
         .sponsor-item .header {
             display: flex;
@@ -580,11 +603,7 @@
                 <div class="spinner" id="donateSpinner"></div>
             </button>
         </div>
-        <div class="ad-container">
-            <a href="https://airdropsmanager.com/" target="_blank">
-                <img id="adImage" src="https://i.imgur.com/NgWonX9.png" alt="Ad Space">
-            </a>
-        </div>
+        <div class="ad-container" id="adContainer"></div>
         <div class="decorative-blur blur-1"></div>
         <div class="decorative-blur blur-2"></div>
     </div>
@@ -770,7 +789,8 @@
                 wallet_connected: "Wallet connected successfully!",
                 claims_paused: "Claims are currently paused.",
                 cooldown_active: "Cooldown active. Wait ${time}.",
-                ready_to_claim: "Ready to claim your tokens!"
+                ready_to_claim: "Ready to claim your tokens!",
+                new_sponsors_added: "New sponsors added! Follow them to claim again."
             },
             pt: {
                 claim_mon_tokens: "Fazer Claim de MON na Testnet Monad",
@@ -850,7 +870,8 @@
                 wallet_connected: "Carteira conectada com sucesso!",
                 claims_paused: "Claims estão pausados no momento.",
                 cooldown_active: "Cooldown ativo. Aguarde ${time}.",
-                ready_to_claim: "Pronto para fazer claim dos seus tokens!"
+                ready_to_claim: "Pronto para fazer claim dos seus tokens!",
+                new_sponsors_added: "Novos sponsors adicionados! Siga-os para fazer claim novamente."
             }
         };
 
@@ -860,6 +881,7 @@
         let totalActiveSponsors = 0;
         let followProcessStarted = false;
         let followButtonClicks = 0;
+        let followedSponsors = new Set(JSON.parse(localStorage.getItem("followedSponsors") || "[]"));
         let currentLanguage = localStorage.getItem("language") || "en";
         const INACTIVITY_TIMEOUT = 30 * 60 * 1000;
 
@@ -904,6 +926,7 @@
         const closeAbout = document.getElementById("close-about");
         const closeContact = document.getElementById("close-contact");
         const closeTerms = document.getElementById("close-terms");
+        const adContainer = document.getElementById("adContainer");
 
         connectWalletButton.onclick = connectWallet;
         followTwitterButton.onclick = followTwitter;
@@ -934,7 +957,6 @@
             };
         });
 
-        // Função para throttlear requisições ao RPC
         function throttle(fn, wait) {
             let lastCall = 0;
             return async function (...args) {
@@ -950,7 +972,6 @@
             };
         }
 
-        // Função auxiliar para chamar métodos do contrato com throttle
         const callContractMethod = throttle(async (method, ...args) => {
             try {
                 return await contract[method](...args);
@@ -958,26 +979,24 @@
                 console.error(`Error calling ${method}:`, error);
                 throw error;
             }
-        }, 1000); // 1 segundo de intervalo
+        }, 1000);
 
-        // Função para estimar gás dinamicamente
         async function estimateGas(method, args = [], options = {}) {
             try {
                 const gasEstimate = await contract.estimateGas[method](...args, options);
-                return gasEstimate.mul(12).div(10); // Aumenta 20% para segurança
+                return gasEstimate.mul(12).div(10);
             } catch (error) {
                 console.error(`Gas estimation failed for ${method}:`, error);
-                return ethers.BigNumber.from("200000"); // Fallback caso falhe
+                return ethers.BigNumber.from("200000");
             }
         }
 
-        // Função para alternar entre RPCs em caso de falha
         async function getProvider() {
             const rpcUrls = MONAD_TESTNET.rpcUrls;
             for (const url of rpcUrls) {
                 try {
                     const tempProvider = new ethers.providers.JsonRpcProvider(url);
-                    await tempProvider.getBlockNumber(); // Testa a conexão
+                    await tempProvider.getBlockNumber();
                     return tempProvider;
                 } catch (error) {
                     console.warn(`RPC ${url} falhou:`, error);
@@ -1061,7 +1080,6 @@
             }
         }
 
-        // Aplicar idioma padrão (inglês) imediatamente
         updateLanguage();
         async function followTwitter() {
             window.open("https://x.com/_roneslira", "_blank");
@@ -1114,7 +1132,9 @@
                     followProcessStarted = true;
                     status.textContent = translations[currentLanguage].follow_the_sponsors;
                     document.querySelectorAll(".sponsor-item button").forEach(btn => {
-                        if (btn.textContent === translations[currentLanguage].follow) btn.classList.add("pulse");
+                        if (btn.textContent === translations[currentLanguage].follow && !followedSponsors.has(btn.closest(".sponsor-item").querySelector("p").textContent.split(" ")[0].slice(1))) {
+                            btn.classList.add("pulse");
+                        }
                     });
                     updateFollowSponsorsButton();
                 } else if (followButtonClicks > 1 && !tasksCompleted.followSponsors) {
@@ -1122,8 +1142,10 @@
                     const activeItems = document.querySelectorAll(".sponsor-item .badge.active");
                     activeItems.forEach(badge => {
                         const sponsorItem = badge.closest(".sponsor-item");
-                        sponsorItem.classList.add("highlight");
-                        setTimeout(() => sponsorItem.classList.remove("highlight"), 5000);
+                        if (!followedSponsors.has(sponsorItem.querySelector("p").textContent.split(" ")[0].slice(1))) {
+                            sponsorItem.classList.add("highlight");
+                            setTimeout(() => sponsorItem.classList.remove("highlight"), 5000);
+                        }
                     });
                     setTimeout(() => status.textContent = "", 5000);
                 }
@@ -1140,13 +1162,17 @@
                 confirmationModal.style.display = "block";
                 modalMessage.textContent = translations[currentLanguage].did_you_follow_sponsor;
                 document.getElementById("confirm-yes").onclick = () => {
+                    const username = url.split("https://x.com/")[1] || "Unknown";
+                    followedSponsors.add(username);
                     sponsorsFollowed++;
+                    localStorage.setItem("followedSponsors", JSON.stringify([...followedSponsors]));
                     if (sponsorsFollowed >= totalActiveSponsors) {
                         tasksCompleted.followSponsors = true;
                         document.querySelectorAll(".sponsor-item button").forEach(btn => btn.classList.remove("pulse"));
                     }
                     updateTaskButtons();
                     checkClaimStatus();
+                    loadSponsors(); // Atualiza a UI para remover a classe new-sponsor
                     closeModal();
                 };
                 document.getElementById("confirm-no").onclick = closeModal;
@@ -1193,7 +1219,8 @@
                 const cooldown = Number(await callContractMethod("cooldownPeriod"));
                 const paused = await callContractMethod("paused");
                 const sponsors = await callContractMethod("getActiveSponsors");
-                const hasActiveSponsors = sponsors.some(s => s.donor !== "0x0000000000000000000000000000000000000000" && s.xProfile !== "");
+                const activeSponsors = sponsors.filter(s => s.donor !== "0x0000000000000000000000000000000000000000" && s.xProfile !== "");
+                const pendingSponsors = activeSponsors.filter(s => !followedSponsors.has(s.xProfile.split("https://x.com/")[1] || "Unknown")).length;
 
                 const now = Math.floor(Date.now() / 1000);
                 if (paused) {
@@ -1206,10 +1233,14 @@
                     const timeLeft = last + cooldown - now;
                     status.textContent = translations[currentLanguage].cooldown_active.replace("${time}", formatTime(timeLeft));
                     startCooldownCountdown(last, cooldown);
-                } else if (!tasksCompleted.followTwitter || !tasksCompleted.likePost || (hasActiveSponsors && !tasksCompleted.followSponsors)) {
+                } else if (!tasksCompleted.followTwitter || !tasksCompleted.likePost || (activeSponsors.length > 0 && pendingSponsors > 0)) {
                     claimButton.disabled = true;
                     claimButton.classList.remove("enabled");
-                    status.textContent = translations[currentLanguage].complete_all_tasks;
+                    if (pendingSponsors > 0) {
+                        status.textContent = translations[currentLanguage].new_sponsors_added;
+                    } else {
+                        status.textContent = translations[currentLanguage].complete_all_tasks;
+                    }
                 } else {
                     claimButton.disabled = false;
                     claimButton.classList.add("enabled");
@@ -1239,8 +1270,15 @@
         }
 
         async function claimTokens() {
-            if (!tasksCompleted.connectWallet || !tasksCompleted.followTwitter || !tasksCompleted.likePost || !tasksCompleted.followSponsors) {
+            if (!tasksCompleted.connectWallet || !tasksCompleted.followTwitter || !tasksCompleted.likePost) {
                 status.textContent = translations[currentLanguage].complete_tasks_first;
+                return;
+            }
+            const sponsors = await callContractMethod("getActiveSponsors");
+            const activeSponsors = sponsors.filter(s => s.donor !== "0x0000000000000000000000000000000000000000" && s.xProfile !== "");
+            const pendingSponsors = activeSponsors.filter(s => !followedSponsors.has(s.xProfile.split("https://x.com/")[1] || "Unknown")).length;
+            if (activeSponsors.length > 0 && pendingSponsors > 0) {
+                status.textContent = translations[currentLanguage].new_sponsors_added;
                 return;
             }
             try {
@@ -1254,9 +1292,8 @@
                 await tx.wait();
 
                 status.textContent = translations[currentLanguage].tokens_claimed;
-                tasksCompleted.followSponsors = false;
-                sponsorsFollowed = 0;
-                followProcessStarted = false;
+                sponsorsFollowed = 0; // Reseta apenas o contador visual
+                followProcessStarted = false; // Reseta o estado do processo
                 updateTaskButtons();
                 await updateUI();
             } catch (error) {
@@ -1397,8 +1434,9 @@
                         const timeLeft = Math.max(0, Number(sponsor.startTime) + Number(sponsor.duration) - Math.floor(Date.now() / 1000));
                         const username = sponsor.xProfile.split("https://x.com/")[1] || "Unknown";
                         const progressPercentage = (timeLeft / duration) * 100;
+                        const isNewSponsor = !followedSponsors.has(username);
                         sponsorsList.innerHTML += `
-                            <div class="sponsor-item ${sponsorClasses[i]}">
+                            <div class="sponsor-item ${sponsorClasses[i]} ${isNewSponsor ? 'new-sponsor' : ''}">
                                 <div class="header">
                                     <p><i class="fas ${sponsorIcons[i]}"></i> @${username} (${sponsorLevels[i]}) <span class="badge active"></span></p>
                                     <button onclick="handleSponsorFollow('${sponsor.xProfile}')" data-i18n="follow">${translations[currentLanguage].follow}</button>
@@ -1453,8 +1491,10 @@
             totalActiveSponsors = 0;
             followProcessStarted = false;
             followButtonClicks = 0;
+            followedSponsors.clear();
             localStorage.removeItem("walletConnected");
             localStorage.removeItem("lastActive");
+            localStorage.removeItem("followedSponsors");
             walletInfo.style.display = "none";
             updateTaskButtons();
             checkClaimStatus();
@@ -1488,12 +1528,45 @@
             if (account) localStorage.setItem("lastActive", Date.now());
         });
 
+        // Configuração dos anúncios
+        const ads = [
+            { url: "https://monad.xyz/", image: "https://i.imgur.com/example1.jpg" },
+            { url: "https://x.com/monad_xyz", image: "https://i.imgur.com/example2.jpg" },
+            { url: "https://testnet.monadexplorer.com/", image: "https://i.imgur.com/example3.jpg" },
+            { url: "https://docs.monad.xyz/", image: "https://i.imgur.com/example4.jpg" },
+            { url: "https://github.com/monad-labs", image: "https://i.imgur.com/example5.jpg" }
+        ];
+
+        function loadAds() {
+            adContainer.innerHTML = "";
+            ads.forEach((ad, index) => {
+                const adElement = document.createElement("a");
+                adElement.href = ad.url;
+                adElement.target = "_blank";
+                adElement.innerHTML = `<img src="${ad.image}" class="ad-image" alt="Ad ${index + 1}">`;
+                if (index === 0) adElement.classList.add("active");
+                adContainer.appendChild(adElement);
+            });
+            rotateAds();
+        }
+
+        function rotateAds() {
+            let currentAdIndex = 0;
+            setInterval(() => {
+                const adElements = adContainer.querySelectorAll("a");
+                adElements[currentAdIndex].classList.remove("active");
+                currentAdIndex = (currentAdIndex + 1) % ads.length;
+                adElements[currentAdIndex].classList.add("active");
+            }, 5000); // Troca a cada 5 segundos
+        }
+
         window.addEventListener("load", async () => {
             provider = await getProvider();
             contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, provider);
             await checkConnection();
             await updateUI();
             await loadSponsors();
+            loadAds(); // Carrega e inicia a rotação dos anúncios
             updateLanguage();
         });
 
