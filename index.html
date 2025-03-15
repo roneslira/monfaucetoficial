@@ -686,7 +686,7 @@
         const MONAD_TESTNET = {
             chainId: '0x279F', // 10143
             chainName: 'Monad Testnet',
-            rpcUrls: ['https://testnet-rpc.monad.xyz/', 'https://monad-testnet.drpc.org'],
+            rpcUrls: ['https://testnet-rpc.monad.xyz/'], // RPC problemático removido
             nativeCurrency: { name: 'MON', symbol: 'MON', decimals: 18 },
             blockExplorerUrls: ['https://testnet.monadexplorer.com/']
         };
@@ -862,6 +862,7 @@
         let followButtonClicks = 0;
         let currentLanguage = localStorage.getItem("language") || "en";
         const INACTIVITY_TIMEOUT = 30 * 60 * 1000;
+        let taskSessionId = "";
 
         const connectWalletButton = document.getElementById("connectWalletButton");
         const followTwitterButton = document.getElementById("followTwitterButton");
@@ -934,7 +935,6 @@
             };
         });
 
-        // Função para throttlear requisições ao RPC
         function throttle(fn, wait) {
             let lastCall = 0;
             return async function (...args) {
@@ -950,7 +950,6 @@
             };
         }
 
-        // Função auxiliar para chamar métodos do contrato com throttle
         const callContractMethod = throttle(async (method, ...args) => {
             try {
                 return await contract[method](...args);
@@ -958,32 +957,27 @@
                 console.error(`Error calling ${method}:`, error);
                 throw error;
             }
-        }, 1000); // 1 segundo de intervalo
+        }, 1000);
 
-        // Função para estimar gás dinamicamente
         async function estimateGas(method, args = [], options = {}) {
             try {
                 const gasEstimate = await contract.estimateGas[method](...args, options);
-                return gasEstimate.mul(12).div(10); // Aumenta 20% para segurança
+                return gasEstimate.mul(12).div(10);
             } catch (error) {
                 console.error(`Gas estimation failed for ${method}:`, error);
-                return ethers.BigNumber.from("200000"); // Fallback caso falhe
+                return ethers.BigNumber.from("200000");
             }
         }
 
-        // Função para alternar entre RPCs em caso de falha
         async function getProvider() {
-            const rpcUrls = MONAD_TESTNET.rpcUrls;
-            for (const url of rpcUrls) {
-                try {
-                    const tempProvider = new ethers.providers.JsonRpcProvider(url);
-                    await tempProvider.getBlockNumber(); // Testa a conexão
-                    return tempProvider;
-                } catch (error) {
-                    console.warn(`RPC ${url} falhou:`, error);
-                }
+            try {
+                const tempProvider = new ethers.providers.JsonRpcProvider(MONAD_TESTNET.rpcUrls[0]);
+                await tempProvider.getBlockNumber();
+                return tempProvider;
+            } catch (error) {
+                console.error(`RPC ${MONAD_TESTNET.rpcUrls[0]} failed:`, error);
+                throw new Error("RPC connection failed.");
             }
-            throw new Error("Todos os RPCs falharam.");
         }
 
         function updateLanguage() {
@@ -999,6 +993,49 @@
                 const key = el.dataset.i18nPlaceholder;
                 el.placeholder = translations[currentLanguage][key] || el.placeholder;
             });
+        }
+
+        async function generateTaskSessionId() {
+            const twitterUrl = "https://x.com/_roneslira";
+            const postUrl = "https://x.com/_roneslira/status/1900013122238169182";
+            const sponsors = await callContractMethod("getActiveSponsors");
+            const activeSponsorProfiles = sponsors
+                .filter(s => s.donor !== "0x0000000000000000000000000000000000000000" && s.xProfile !== "")
+                .map(s => s.xProfile)
+                .sort()
+                .join(",");
+            const combined = `${twitterUrl}|${postUrl}|${activeSponsorProfiles}`;
+            return ethers.utils.keccak256(ethers.utils.toUtf8Bytes(combined));
+        }
+
+        function loadTasksState() {
+            const storedSessionId = localStorage.getItem("taskSessionId");
+            const storedTasks = JSON.parse(localStorage.getItem("tasksCompleted") || "{}");
+            return { storedSessionId, storedTasks };
+        }
+
+        function saveTasksState() {
+            localStorage.setItem("taskSessionId", taskSessionId);
+            localStorage.setItem("tasksCompleted", JSON.stringify(tasksCompleted));
+        }
+
+        async function initializeTasks() {
+            const currentSessionId = await generateTaskSessionId();
+            const { storedSessionId, storedTasks } = loadTasksState();
+            if (currentSessionId !== storedSessionId) {
+                tasksCompleted = { connectWallet: false, followTwitter: false, likePost: false, followSponsors: false };
+                sponsorsFollowed = 0;
+                followProcessStarted = false;
+                followButtonClicks = 0;
+                taskSessionId = currentSessionId;
+            } else {
+                tasksCompleted = { ...tasksCompleted, ...storedTasks };
+                sponsorsFollowed = Number(localStorage.getItem("sponsorsFollowed") || 0);
+                followProcessStarted = localStorage.getItem("followProcessStarted") === "true";
+                followButtonClicks = Number(localStorage.getItem("followButtonClicks") || 0);
+            }
+            saveTasksState();
+            updateTaskButtons();
         }
 
         async function connectWallet() {
@@ -1023,6 +1060,7 @@
                 tasksCompleted.connectWallet = true;
                 localStorage.setItem("walletConnected", "true");
                 localStorage.setItem("lastActive", Date.now());
+                saveTasksState();
                 updateTaskButtons();
                 await updateUI();
                 await loadSponsors();
@@ -1061,7 +1099,6 @@
             }
         }
 
-        // Aplicar idioma padrão (inglês) imediatamente
         updateLanguage();
         async function followTwitter() {
             window.open("https://x.com/_roneslira", "_blank");
@@ -1070,6 +1107,7 @@
             modalMessage.textContent = translations[currentLanguage].did_you_follow;
             document.getElementById("confirm-yes").onclick = () => {
                 tasksCompleted.followTwitter = true;
+                saveTasksState();
                 updateTaskButtons();
                 checkClaimStatus();
                 closeModal();
@@ -1084,6 +1122,7 @@
             modalMessage.textContent = translations[currentLanguage].did_you_like;
             document.getElementById("confirm-yes").onclick = () => {
                 tasksCompleted.likePost = true;
+                saveTasksState();
                 updateTaskButtons();
                 checkClaimStatus();
                 closeModal();
@@ -1097,6 +1136,7 @@
                 return;
             }
             followButtonClicks++;
+            localStorage.setItem("followButtonClicks", followButtonClicks);
             try {
                 const sponsors = await callContractMethod("getActiveSponsors");
                 const activeSponsors = sponsors.filter(s => s.donor !== "0x0000000000000000000000000000000000000000" && s.xProfile !== "");
@@ -1104,6 +1144,7 @@
 
                 if (totalActiveSponsors === 0) {
                     tasksCompleted.followSponsors = true;
+                    saveTasksState();
                     updateTaskButtons();
                     checkClaimStatus();
                     status.textContent = translations[currentLanguage].no_sponsors;
@@ -1112,6 +1153,7 @@
 
                 if (!followProcessStarted) {
                     followProcessStarted = true;
+                    localStorage.setItem("followProcessStarted", "true");
                     status.textContent = translations[currentLanguage].follow_the_sponsors;
                     document.querySelectorAll(".sponsor-item button").forEach(btn => {
                         if (btn.textContent === translations[currentLanguage].follow) btn.classList.add("pulse");
@@ -1141,10 +1183,12 @@
                 modalMessage.textContent = translations[currentLanguage].did_you_follow_sponsor;
                 document.getElementById("confirm-yes").onclick = () => {
                     sponsorsFollowed++;
+                    localStorage.setItem("sponsorsFollowed", sponsorsFollowed);
                     if (sponsorsFollowed >= totalActiveSponsors) {
                         tasksCompleted.followSponsors = true;
                         document.querySelectorAll(".sponsor-item button").forEach(btn => btn.classList.remove("pulse"));
                     }
+                    saveTasksState();
                     updateTaskButtons();
                     checkClaimStatus();
                     closeModal();
@@ -1257,6 +1301,9 @@
                 tasksCompleted.followSponsors = false;
                 sponsorsFollowed = 0;
                 followProcessStarted = false;
+                localStorage.setItem("sponsorsFollowed", sponsorsFollowed);
+                localStorage.setItem("followProcessStarted", "false");
+                saveTasksState();
                 updateTaskButtons();
                 await updateUI();
             } catch (error) {
@@ -1411,6 +1458,7 @@
                     }
                 }
                 sponsorsList.innerHTML += `<button class="sponsor-info-button" onclick="document.getElementById('sponsor-info-modal').style.display = 'block'; document.getElementById('modal-overlay').style.display = 'block';" data-i18n="how_sponsors_work_title">${translations[currentLanguage].how_sponsors_work_title}</button>`;
+                await initializeTasks();
             } catch (error) {
                 console.error("Load sponsors error:", error);
                 sponsorsList.innerHTML = `<p>${translations[currentLanguage].failed_to_load_sponsors}</p>`;
@@ -1454,7 +1502,10 @@
             followProcessStarted = false;
             followButtonClicks = 0;
             localStorage.removeItem("walletConnected");
-            localStorage.removeItem("lastActive");
+            localStorage.setItem("sponsorsFollowed", sponsorsFollowed);
+            localStorage.setItem("followProcessStarted", "false");
+            localStorage.setItem("followButtonClicks", followButtonClicks);
+            saveTasksState();
             walletInfo.style.display = "none";
             updateTaskButtons();
             checkClaimStatus();
