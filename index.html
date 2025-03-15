@@ -7,6 +7,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
     <link rel="icon" type="image/png" href="https://i.imgur.com/12cskgZ.png">
     <style>
+        /* [CSS mantido como está, está correto] */
         :root {
             --background-start: #000000;
             --background-end: #0F1419;
@@ -123,7 +124,18 @@
             overflow: hidden;
             margin: 0 auto;
         }
+        .ad-container a, .ad-container .ad-code {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+        .ad-container a.active, .ad-container .ad-code.active { opacity: 1; }
         .ad-image { width: 100%; height: 100%; object-fit: cover; }
+        .ad-code iframe { width: 100%; height: 100%; }
     </style>
 </head>
 <body>
@@ -350,11 +362,7 @@
         const adContainer = document.getElementById("ad-container");
 
         async function getProvider() {
-            if (!window.ethereum) {
-                console.error("No Ethereum provider detected");
-                throw new Error("No wallet detected");
-            }
-            try {
+            if (window.ethereum) {
                 if (window.ethereum.isMetaMask) {
                     provider = new ethers.providers.Web3Provider(window.ethereum);
                     return provider;
@@ -368,10 +376,8 @@
                 }
                 provider = new ethers.providers.Web3Provider(window.ethereum);
                 return provider;
-            } catch (error) {
-                console.error("Provider initialization failed:", error);
-                throw error;
             }
+            throw new Error("No wallet detected");
         }
 
         function throttle(fn, wait) {
@@ -428,13 +434,10 @@
 
         async function connectWallet() {
             try {
-                console.log("Attempting to connect wallet...");
                 provider = await getProvider();
-                console.log("Provider obtained:", provider);
                 await provider.send("eth_requestAccounts", []);
                 signer = provider.getSigner();
                 account = await signer.getAddress();
-                console.log("Account connected:", account);
                 contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
                 document.getElementById("account-address").textContent = `${account.slice(0, 6)}...${account.slice(-4)}`;
                 walletInfo.style.display = "flex";
@@ -900,16 +903,46 @@
             if (account) localStorage.setItem("lastActive", Date.now());
         });
 
+        const ads = [
+            { type: "image", url: "https://rollercoin.com/?r=jnd3a8ht", image: "https://static.rollercoin.com/static/img/ref/gen2/w300h600.gif" },
+            { type: "code", code: "<iframe data-aa='2385910' src='//ad.a-ads.com/2385910?size=300x600' style='width:300px; height:600px; border:0px; padding:0; overflow:hidden; background-color: transparent;'></iframe>" },
+            { type: "image", url: "https://airdropsmanager.com/", image: "https://i.imgur.com/NgWonX9.png" },
+            // { type: "image", url: "https://example.com/", image: "https://i.imgur.com/example4.jpg" },
+            // { type: "code", code: "<div id='ad-example'><script>document.write('Sample Ad');</script></div>" }
+        ];
+
         function loadAds() {
-            console.log("Loading static ad...");
             adContainer.innerHTML = "";
-            const adElement = document.createElement("a");
-            adElement.href = "https://airdropsmanager.com/";
-            adElement.target = "_blank";
-            adElement.innerHTML = `<img src="https://i.imgur.com/NgWonX9.png" class="ad-image" alt="Ad">`;
-            adElement.querySelector("img").onerror = () => console.error("Failed to load ad image: https://i.imgur.com/NgWonX9.png");
-            adElement.querySelector("img").onload = () => console.log("Ad image loaded successfully");
-            adContainer.appendChild(adElement);
+            ads.forEach((ad, index) => {
+                let adElement;
+                if (ad.type === "image") {
+                    if (!ad.image) {
+                        console.error(`Missing image URL for ad at index ${index}`);
+                        return;
+                    }
+                    adElement = document.createElement("a");
+                    adElement.href = ad.url;
+                    adElement.target = "_blank";
+                    adElement.innerHTML = `<img src="${ad.image}" class="ad-image" alt="Ad ${index + 1}">`;
+                } else if (ad.type === "code") {
+                    adElement = document.createElement("div");
+                    adElement.classList.add("ad-code");
+                    adElement.innerHTML = ad.code;
+                }
+                if (index === 0) adElement.classList.add("active");
+                adContainer.appendChild(adElement);
+            });
+            rotateAds();
+        }
+
+        function rotateAds() {
+            let currentAdIndex = 0;
+            setInterval(() => {
+                const adElements = adContainer.children;
+                adElements[currentAdIndex].classList.remove("active");
+                currentAdIndex = (currentAdIndex + 1) % ads.length;
+                adElements[currentAdIndex].classList.add("active");
+            }, 5000);
         }
 
         window.addEventListener("load", async () => {
