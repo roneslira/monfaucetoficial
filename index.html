@@ -686,7 +686,7 @@
         const MONAD_TESTNET = {
             chainId: '0x279F', // 10143
             chainName: 'Monad Testnet',
-            rpcUrls: ['https://testnet-rpc.monad.xyz/'], // RPC problemático removido
+            rpcUrls: ['https://testnet-rpc.monad.xyz/'],
             nativeCurrency: { name: 'MON', symbol: 'MON', decimals: 18 },
             blockExplorerUrls: ['https://testnet.monadexplorer.com/']
         };
@@ -998,7 +998,13 @@
         async function generateTaskSessionId() {
             const twitterUrl = "https://x.com/_roneslira";
             const postUrl = "https://x.com/_roneslira/status/1900013122238169182";
-            const sponsors = await callContractMethod("getActiveSponsors");
+            let sponsors;
+            try {
+                sponsors = await callContractMethod("getActiveSponsors");
+            } catch (error) {
+                console.error("Erro ao obter patrocinadores para taskSessionId:", error);
+                sponsors = [];
+            }
             const activeSponsorProfiles = sponsors
                 .filter(s => s.donor !== "0x0000000000000000000000000000000000000000" && s.xProfile !== "")
                 .map(s => s.xProfile)
@@ -1009,33 +1015,44 @@
         }
 
         function loadTasksState() {
-            const storedSessionId = localStorage.getItem("taskSessionId");
+            const storedSessionId = localStorage.getItem("taskSessionId") || "";
             const storedTasks = JSON.parse(localStorage.getItem("tasksCompleted") || "{}");
-            return { storedSessionId, storedTasks };
+            const storedSponsorsFollowed = Number(localStorage.getItem("sponsorsFollowed") || 0);
+            const storedFollowProcessStarted = localStorage.getItem("followProcessStarted") === "true";
+            const storedFollowButtonClicks = Number(localStorage.getItem("followButtonClicks") || 0);
+            return { storedSessionId, storedTasks, storedSponsorsFollowed, storedFollowProcessStarted, storedFollowButtonClicks };
         }
 
         function saveTasksState() {
             localStorage.setItem("taskSessionId", taskSessionId);
             localStorage.setItem("tasksCompleted", JSON.stringify(tasksCompleted));
+            localStorage.setItem("sponsorsFollowed", sponsorsFollowed);
+            localStorage.setItem("followProcessStarted", followProcessStarted);
+            localStorage.setItem("followButtonClicks", followButtonClicks);
         }
 
         async function initializeTasks() {
-            const currentSessionId = await generateTaskSessionId();
-            const { storedSessionId, storedTasks } = loadTasksState();
-            if (currentSessionId !== storedSessionId) {
-                tasksCompleted = { connectWallet: false, followTwitter: false, likePost: false, followSponsors: false };
-                sponsorsFollowed = 0;
-                followProcessStarted = false;
-                followButtonClicks = 0;
-                taskSessionId = currentSessionId;
-            } else {
-                tasksCompleted = { ...tasksCompleted, ...storedTasks };
-                sponsorsFollowed = Number(localStorage.getItem("sponsorsFollowed") || 0);
-                followProcessStarted = localStorage.getItem("followProcessStarted") === "true";
-                followButtonClicks = Number(localStorage.getItem("followButtonClicks") || 0);
+            try {
+                taskSessionId = await generateTaskSessionId();
+                const { storedSessionId, storedTasks, storedSponsorsFollowed, storedFollowProcessStarted, storedFollowButtonClicks } = loadTasksState();
+
+                if (storedSessionId && storedSessionId === taskSessionId) {
+                    tasksCompleted = { ...tasksCompleted, ...storedTasks };
+                    sponsorsFollowed = storedSponsorsFollowed;
+                    followProcessStarted = storedFollowProcessStarted;
+                    followButtonClicks = storedFollowButtonClicks;
+                } else {
+                    tasksCompleted = { connectWallet: false, followTwitter: false, likePost: false, followSponsors: false };
+                    sponsorsFollowed = 0;
+                    followProcessStarted = false;
+                    followButtonClicks = 0;
+                    saveTasksState();
+                }
+                updateTaskButtons();
+            } catch (error) {
+                console.error("Erro ao inicializar tarefas:", error);
+                status.textContent = translations[currentLanguage].failed_to_load_ui;
             }
-            saveTasksState();
-            updateTaskButtons();
         }
 
         async function connectWallet() {
