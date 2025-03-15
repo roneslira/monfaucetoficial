@@ -1,10 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>MonFaucet</title>
-	<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet" />
-	<link href="https://i.imgur.com/12cskgZ.png" rel="icon" type="image/png" />
-	<style type="text/css">:root {
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MonFaucet</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <link rel="icon" type="image/png" href="https://i.imgur.com/12cskgZ.png">
+    <style>
+        :root {
             --background-start: #000000;
             --background-end: #0F1419;
             --primary-color: #007AFF;
@@ -504,143 +507,155 @@
             .sponsors-container { left: calc(50% - 300px); }
             .ad-container { right: calc(50% - 300px); }
         }
-	</style>
+    </style>
 </head>
 <body>
-<div class="wallet-info" id="walletInfo"><button aria-label="Copy wallet address" class="copy-button" id="copyWallet" title="Copy Address"></button><button data-i18n="disconnect" id="disconnectWallet">Disconnect</button></div>
-
-<div class="main-content"><canvas></canvas>
-
-<div class="sponsors-container" id="sponsors-container">
-<h2><span data-i18n="sponsors">Sponsors</span></h2>
-
-<div id="sponsors-list"></div>
-
-<div class="language-selector"><img alt="English" class="language-flag" data-lang="en" src="https://flagcdn.com/w40/gb.png" /> <img alt="Português" class="language-flag" data-lang="pt" src="https://flagcdn.com/w40/br.png" /></div>
-</div>
-
-<div class="faucet-container">
-<div class="faucet-title">MonFaucet</div>
-
-<p class="faucet-description" data-i18n="claim_mon_tokens">Claim MON tokens on Monad Testnet</p>
-
-<div class="task-buttons" id="taskButtons"><button class="task-button" id="connectWalletButton"></button>
-
-<div class="flex items-center gap-3"><button class="task-button" id="connectWalletButton"><span data-i18n="connect_wallet">Connect Wallet</span></button></div>
-<button class="task-button" id="followTwitterButton"></button>
-
-<div class="flex items-center gap-3"><button class="task-button" id="followTwitterButton"><span data-i18n="follow_on_x">Follow on X</span></button></div>
-<button class="task-button" id="likePostButton"></button>
-
-<div class="flex items-center gap-3"><button class="task-button" id="likePostButton"><span data-i18n="like_post">Like Post</span></button></div>
-<button class="task-button" disabled="disabled" id="followSponsorsButton"></button>
-
-<div class="flex items-center gap-3"><button class="task-button" disabled="disabled" id="followSponsorsButton"><span data-i18n="follow_sponsors" id="followSponsorsText">Follow Sponsors</span></button></div>
-
-<div class="spinner" id="followSpinner"></div>
-</div>
-
-<div class="info-box" id="infoBox">
-<div><span data-i18n="available">Available</span><span id="available">0.00 MON</span></div>
-
-<div><span data-i18n="claim_amount">Claim Amount</span><span id="claimAmount">0.01 MON</span></div>
-
-<div><span data-i18n="network">Network</span><span>Monad Testnet</span></div>
-
-<div><span data-i18n="last_claim">Last Claim</span><span id="lastClaim">None</span></div>
-</div>
-<button class="claim-button" disabled="disabled" id="claimButton"><span data-i18n="claim_tokens">Claim Tokens</span></button>
-
-<div class="spinner" id="claimSpinner"></div>
-
-<div class="status" id="status"></div>
-</div>
-
-<div class="donate-container"><input data-i18n-placeholder="enter_mon_amount" id="donateAmount" min="0" placeholder="Enter MON amount" step="0.01" type="number" /><button id="donateButton"><span data-i18n="donate">Donate</span></button>
-
-<div class="spinner" id="donateSpinner"></div>
-<button id="donateButton"></button></div>
-
-<div class="ad-container"><a href="https://airdropsmanager.com/" target="_blank"><img alt="Ad Space" id="adImage" src="https://i.imgur.com/NgWonX9.png" /> </a></div>
-
-<div class="decorative-blur blur-1"></div>
-
-<div class="decorative-blur blur-2"></div>
-</div>
-
-<div id="modal-overlay"></div>
-
-<div class="modal" id="confirmation-modal">
-<div class="modal-content" id="modalMessage">Did you complete the task?</div>
-
-<div class="modal-buttons"><button class="modal-button" data-i18n="yes" id="confirm-yes">Yes</button><button class="modal-button" data-i18n="no" id="confirm-no">No</button></div>
-</div>
-
-<div class="modal" id="sponsor-modal">
-<div class="modal-content" id="sponsorModalContent"></div>
-<input data-i18n-placeholder="enter_x_profile" id="xProfileInput" placeholder="Enter your X profile URL" type="text" /><button class="modal-button" id="submitXProfile"><span data-i18n="submit">Submit</span></button>
-
-<div class="spinner" id="submitSpinner"></div>
-<button class="modal-button" id="submitXProfile"></button>
-
-<p id="modalStatus"></p>
-</div>
-
-<div class="modal" id="sponsor-info-modal">
-<div class="modal-content">
-<h3 data-i18n="how_sponsors_work_title">How Sponsors Work</h3>
-
-<p data-i18n="support_monfaucet">Support MonFaucet by donating:</p>
-
-<ul>
-	<li>Diamond: 1000 MON - 7 days</li>
-	<li>Gold: 700 MON - 4 days</li>
-	<li>Silver: 500 MON - 2 days</li>
-	<li>Bronze: 200 MON - 1 day</li>
-	<li>Copper: 100 MON - 12 hours</li>
-</ul>
-
-<p data-i18n="your_x_profile">Your X profile will be displayed here!</p>
-<button class="modal-button" data-i18n="close" id="close-sponsor-info">Close</button></div>
-</div>
-
-<div class="modal" id="about-modal">
-<div class="modal-content">
-<h3 data-i18n="about_monfaucet">About MonFaucet</h3>
-
-<p data-i18n="about_description">MonFaucet is a platform designed to distribute MON tokens on the Monad Testnet. Our goal is to support the Monad ecosystem by providing an easy way for users to claim tokens and engage with our sponsors. Join us in building a vibrant community!</p>
-<button class="modal-button" data-i18n="close" id="close-about">Close</button></div>
-</div>
-
-<div class="modal" id="contact-modal">
-<div class="modal-content">
-<h3 data-i18n="contact_us">Contact Us</h3>
-
-<p data-i18n="contact_description">For inquiries, support, or suggestions, reach out to us on X:</p>
-
-<p><a href="https://x.com/_roneslira" target="_blank">@_roneslira</a></p>
-<button class="modal-button" data-i18n="close" id="close-contact">Close</button></div>
-</div>
-
-<div class="modal" id="terms-modal">
-<div class="modal-content">
-<h3 data-i18n="terms_of_use">Terms of Use</h3>
-
-<p data-i18n="terms_description">By using MonFaucet, you agree to:</p>
-
-<ul>
-	<li data-i18n="terms_responsible">Use the platform responsibly and not exploit it for malicious purposes.</li>
-	<li data-i18n="terms_honesty">Complete tasks honestly to claim tokens.</li>
-	<li data-i18n="terms_availability">Understand that token distribution is subject to availability and network conditions.</li>
-	<li data-i18n="terms_modification">Accept that MonFaucet reserves the right to pause or modify services at any time.</li>
-</ul>
-
-<p data-i18n="terms_testnet">This is a testnet service; tokens have no real-world value.</p>
-<button class="modal-button" data-i18n="close" id="close-terms">Close</button></div>
-</div>
-
-<footer><a data-i18n="about" id="about-link">About</a> | <a data-i18n="contact" id="contact-link">Contact</a> | <a data-i18n="terms" id="terms-link">Terms</a></footer>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script><script>
+    <div class="wallet-info" id="walletInfo">
+        <span id="walletAddress"></span>
+        <button class="copy-button" id="copyWallet" aria-label="Copy wallet address" title="Copy Address">
+            <i class="fas fa-copy"></i>
+        </button>
+        <button id="disconnectWallet" data-i18n="disconnect">Disconnect</button>
+    </div>
+    <div class="main-content">
+        <canvas></canvas>
+        <div class="sponsors-container" id="sponsors-container">
+            <h2><i class="fas fa-crown"></i> <span data-i18n="sponsors">Sponsors</span></h2>
+            <div id="sponsors-list"></div>
+            <div class="language-selector">
+                <img src="https://flagcdn.com/w40/gb.png" alt="English" class="language-flag" data-lang="en">
+                <img src="https://flagcdn.com/w40/br.png" alt="Português" class="language-flag" data-lang="pt">
+            </div>
+        </div>
+        <div class="faucet-container">
+            <div class="faucet-title">MonFaucet</div>
+            <p class="faucet-description" data-i18n="claim_mon_tokens">Claim MON tokens on Monad Testnet</p>
+            <div class="task-buttons" id="taskButtons">
+                <button class="task-button" id="connectWalletButton">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-wallet icon"></i>
+                        <span data-i18n="connect_wallet">Connect Wallet</span>
+                    </div>
+                    <i class="fas fa-arrow-right arrow"></i>
+                </button>
+                <button class="task-button" id="followTwitterButton">
+                    <div class="flex items-center gap-3">
+                        <i class="fab fa-twitter icon"></i>
+                        <span data-i18n="follow_on_x">Follow on X</span>
+                    </div>
+                    <i class="fas fa-arrow-right arrow"></i>
+                </button>
+                <button class="task-button" id="likePostButton">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-heart icon"></i>
+                        <span data-i18n="like_post">Like Post</span>
+                    </div>
+                    <i class="fas fa-arrow-right arrow"></i>
+                </button>
+                <button class="task-button" id="followSponsorsButton" disabled>
+                    <div class="flex items-center gap-3">
+                        <i class="fab fa-twitter icon"></i>
+                        <span id="followSponsorsText" data-i18n="follow_sponsors">Follow Sponsors</span>
+                    </div>
+                    <div class="spinner" id="followSpinner"></div>
+                    <i class="fas fa-arrow-right arrow"></i>
+                </button>
+            </div>
+            <div class="info-box" id="infoBox">
+                <div><span data-i18n="available">Available</span><span id="available">0.00 MON</span></div>
+                <div><span data-i18n="claim_amount">Claim Amount</span><span id="claimAmount">0.01 MON</span></div>
+                <div><span data-i18n="network">Network</span><span>Monad Testnet</span></div>
+                <div><span data-i18n="last_claim">Last Claim</span><span id="lastClaim">None</span></div>
+            </div>
+            <button class="claim-button" id="claimButton" disabled>
+                <span data-i18n="claim_tokens">Claim Tokens</span>
+                <div class="spinner" id="claimSpinner"></div>
+            </button>
+            <div class="status" id="status"></div>
+        </div>
+        <div class="donate-container">
+            <input type="number" id="donateAmount" data-i18n-placeholder="enter_mon_amount" placeholder="Enter MON amount" step="0.01" min="0">
+            <button id="donateButton">
+                <span data-i18n="donate">Donate</span>
+                <div class="spinner" id="donateSpinner"></div>
+            </button>
+        </div>
+        <div class="ad-container">
+            <a href="https://airdropsmanager.com/" target="_blank">
+                <img id="adImage" src="https://i.imgur.com/NgWonX9.png" alt="Ad Space">
+            </a>
+        </div>
+        <div class="decorative-blur blur-1"></div>
+        <div class="decorative-blur blur-2"></div>
+    </div>
+    <div id="modal-overlay"></div>
+    <div id="confirmation-modal" class="modal">
+        <div class="modal-content" id="modalMessage">Did you complete the task?</div>
+        <div class="modal-buttons">
+            <button class="modal-button" id="confirm-yes" data-i18n="yes">Yes</button>
+            <button class="modal-button" id="confirm-no" data-i18n="no">No</button>
+        </div>
+    </div>
+    <div id="sponsor-modal" class="modal">
+        <div class="modal-content" id="sponsorModalContent"></div>
+        <input type="text" id="xProfileInput" data-i18n-placeholder="enter_x_profile" placeholder="Enter your X profile URL">
+        <button class="modal-button" id="submitXProfile">
+            <span data-i18n="submit">Submit</span>
+            <div class="spinner" id="submitSpinner"></div>
+        </button>
+        <p id="modalStatus"></p>
+    </div>
+    <div id="sponsor-info-modal" class="modal">
+        <div class="modal-content">
+            <h3 data-i18n="how_sponsors_work_title">How Sponsors Work</h3>
+            <p data-i18n="support_monfaucet">Support MonFaucet by donating:</p>
+            <ul>
+                <li><i class="fas fa-gem"></i> Diamond: 1000 MON - 7 days</li>
+                <li><i class="fas fa-trophy"></i> Gold: 700 MON - 4 days</li>
+                <li><i class="fas fa-medal"></i> Silver: 500 MON - 2 days</li>
+                <li><i class="fas fa-award"></i> Bronze: 200 MON - 1 day</li>
+                <li><i class="fas fa-coins"></i> Copper: 100 MON - 12 hours</li>
+            </ul>
+            <p data-i18n="your_x_profile">Your X profile will be displayed here!</p>
+            <button class="modal-button" id="close-sponsor-info" data-i18n="close">Close</button>
+        </div>
+    </div>
+    <div id="about-modal" class="modal">
+        <div class="modal-content">
+            <h3 data-i18n="about_monfaucet">About MonFaucet</h3>
+            <p data-i18n="about_description">MonFaucet is a platform designed to distribute MON tokens on the Monad Testnet. Our goal is to support the Monad ecosystem by providing an easy way for users to claim tokens and engage with our sponsors. Join us in building a vibrant community!</p>
+            <button class="modal-button" id="close-about" data-i18n="close">Close</button>
+        </div>
+    </div>
+    <div id="contact-modal" class="modal">
+        <div class="modal-content">
+            <h3 data-i18n="contact_us">Contact Us</h3>
+            <p data-i18n="contact_description">For inquiries, support, or suggestions, reach out to us on X:</p>
+            <p><a href="https://x.com/_roneslira" target="_blank">@_roneslira</a></p>
+            <button class="modal-button" id="close-contact" data-i18n="close">Close</button>
+        </div>
+    </div>
+    <div id="terms-modal" class="modal">
+        <div class="modal-content">
+            <h3 data-i18n="terms_of_use">Terms of Use</h3>
+            <p data-i18n="terms_description">By using MonFaucet, you agree to:</p>
+            <ul>
+                <li data-i18n="terms_responsible">Use the platform responsibly and not exploit it for malicious purposes.</li>
+                <li data-i18n="terms_honesty">Complete tasks honestly to claim tokens.</li>
+                <li data-i18n="terms_availability">Understand that token distribution is subject to availability and network conditions.</li>
+                <li data-i18n="terms_modification">Accept that MonFaucet reserves the right to pause or modify services at any time.</li>
+            </ul>
+            <p data-i18n="terms_testnet">This is a testnet service; tokens have no real-world value.</p>
+            <button class="modal-button" id="close-terms" data-i18n="close">Close</button>
+        </div>
+    </div>
+    <footer>
+        <a id="about-link" data-i18n="about">About</a> | 
+        <a id="contact-link" data-i18n="contact">Contact</a> | 
+        <a id="terms-link" data-i18n="terms">Terms</a>
+    </footer>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+    <script>
         const CONTRACT_ADDRESS = "0xF3D72b267890b0854ad126A26F39Cf221491D35A";
         const ABI = [
             {"inputs":[],"stateMutability":"nonpayable","type":"constructor"},
@@ -1539,5 +1554,5 @@
             canvas.height = window.innerHeight;
         });
     </script>
-    </body>
+</body>
 </html>
